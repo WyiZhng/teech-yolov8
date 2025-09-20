@@ -1,0 +1,6 @@
+1、将算法从blendmask换成yolo
+2、输入路径不能是str形式，必须是 file_path =  Path("storage/images") / f"{request.images[0]}.jpg"
+3、重新考虑diag的生成
+4、发现docs的测试predict可以用，而通过前端用不了，调整前端代码
+5、发现后端接口前面都带api，而预测的前面没有导致，前端不好导入预测的接口，会404
+6、
