@@ -6,10 +6,43 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+import random
+import numpy as np
 
 # 使用标准ultralytics库，避免模块导入冲突
 from ultralytics import YOLO
 from ultralytics.utils.metrics import bbox_iou
+
+def set_random_seed(seed=42):
+    """
+    设置所有随机种子以确保结果的可重现性
+    
+    Args:
+        seed (int): 随机种子值，默认为42
+    """
+    # 设置Python内置random模块的种子
+    random.seed(seed)
+    
+    # 设置numpy的随机种子
+    np.random.seed(seed)
+    
+    # 设置PyTorch的随机种子
+    torch.manual_seed(seed)
+    
+    # 如果使用CUDA，设置CUDA的随机种子
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)  # 对所有GPU设备设置种子
+        
+        # 设置CUDA的确定性行为
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    
+    # 设置环境变量以确保更好的可重现性
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    
+    print(f"已设置随机种子为: {seed}")
+    print("已启用确定性训练模式，确保结果可重现")
 
 def siou_loss(pred_boxes, target_boxes, eps=1e-7):
     """
@@ -96,6 +129,9 @@ class SIoUTrainer:
         return self.model.train(**kwargs)
 
 if __name__ == '__main__':
+    # 设置随机种子，确保结果可重现
+    set_random_seed(seed=42)
+    
     # 使用SIoU损失函数的训练器
     trainer = SIoUTrainer('yolov8n.pt')
     
@@ -113,10 +149,12 @@ if __name__ == '__main__':
         save_period=10,
         project='runs/train_env_siou',  # 保存训练结果的项目文件夹
         name='yolov8n_siou_dental',  # 训练任务名称
-        exist_ok=True  # 允许覆盖已存在的训练结果
+        exist_ok=True,  # 允许覆盖已存在的训练结果
+        seed=42  # 添加种子参数到训练配置中
     )
     
     print("\n" + "="*60)
     print("训练完成！使用了SIoU损失函数优化小目标检测")
     print("训练结果保存在: runs/train_env_siou/yolov8n_siou_dental/")
+    print("所有随机种子已固定，确保结果可重现")
     print("="*60)
