@@ -3,12 +3,183 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 from ultralytics.utils.metrics import OKS_SIGMA
 from ultralytics.utils.ops import crop_mask, xywh2xyxy, xyxy2xywh
 from ultralytics.utils.tal import RotatedTaskAlignedAssigner, TaskAlignedAssigner, dist2bbox, dist2rbox, make_anchors
 from .metrics import bbox_iou, probiou
 from .tal import bbox2dist
+
+
+def siou_loss(pred_boxes, target_boxes, eps=1e-7):
+    """
+    Calculate SIoU loss.
+    
+    Args:
+        pred_boxes (torch.Tensor): Predicted boxes in xyxy format, shape (N, 4)
+        target_boxes (torch.Tensor): Target boxes in xyxy format, shape (N, 4)
+        eps (float): Small value to avoid division by zero
+        
+    Returns:
+        torch.Tensor: SIoU loss values, shape (N,)
+    """
+    # Get box coordinates
+    px1, py1, px2, py2 = pred_boxes.chunk(4, -1)
+    tx1, ty1, tx2, ty2 = target_boxes.chunk(4, -1)
+    
+    # Calculate box centers
+    pcx, pcy = (px1 + px2) / 2, (py1 + py2) / 2
+    tcx, tcy = (tx1 + tx2) / 2, (ty1 + ty2) / 2
+    
+    # Calculate box dimensions
+    pw, ph = px2 - px1, py2 - py1
+    tw, th = tx2 - tx1, ty2 - ty1
+    
+    # Calculate intersection
+    inter_x1 = torch.max(px1, tx1)
+    inter_y1 = torch.max(py1, ty1)
+    inter_x2 = torch.min(px2, tx2)
+    inter_y2 = torch.min(py2, ty2)
+    
+    inter_w = (inter_x2 - inter_x1).clamp(0)
+    inter_h = (inter_y2 - inter_y1).clamp(0)
+    inter_area = inter_w * inter_h
+    
+    # Calculate union
+    pred_area = pw * ph
+    target_area = tw * th
+    union_area = pred_area + target_area - inter_area + eps
+    
+    # Calculate IoU
+    iou = inter_area / union_area
+    
+    # Calculate enclosing box
+    enclose_x1 = torch.min(px1, tx1)
+    enclose_y1 = torch.min(py1, ty1)
+    enclose_x2 = torch.max(px2, tx2)
+    enclose_y2 = torch.max(py2, ty2)
+    enclose_w = enclose_x2 - enclose_x1
+    enclose_h = enclose_y2 - enclose_y1
+    
+    # Distance penalty
+    center_distance = (pcx - tcx) ** 2 + (pcy - tcy) ** 2
+    enclose_diagonal = enclose_w ** 2 + enclose_h ** 2 + eps
+    
+    # Angle penalty
+    sigma = torch.pow(center_distance / enclose_diagonal, 0.5)
+    sin_alpha = torch.abs(pcx - tcx) / torch.sqrt(center_distance + eps)
+    sin_beta = torch.abs(pcy - tcy) / torch.sqrt(center_distance + eps)
+    threshold = pow(2, 0.5) / 2
+    sin_alpha = torch.where(sin_alpha > threshold, sin_beta, sin_alpha)
+    angle_cost = 2 - 2 * torch.cos(torch.arcsin(sin_alpha) * 2 - math.pi / 2)
+    
+    # Shape penalty
+    omiga_w = torch.abs(pw - tw) / torch.max(pw, tw)
+    omiga_h = torch.abs(ph - th) / torch.max(ph, th)
+    shape_cost = torch.pow(1 - torch.exp(-1 * omiga_w), 4) + torch.pow(1 - torch.exp(-1 * omiga_h), 4)
+    
+    # SIoU loss
+    siou = iou - 0.5 * (angle_cost + shape_cost)
+    return 1 - siou.squeeze(-1)
+
+
+def wiou_v3_loss(pred_boxes, target_boxes, eps=1e-7):
+    """
+    Calculate WIoU v3 loss.
+    
+    Args:
+        pred_boxes (torch.Tensor): Predicted boxes in xyxy format, shape (N, 4)
+        target_boxes (torch.Tensor): Target boxes in xyxy format, shape (N, 4)
+        eps (float): Small value to avoid division by zero
+        
+    Returns:
+        torch.Tensor: WIoU v3 loss values, shape (N,)
+    """
+    # Get box coordinates
+    px1, py1, px2, py2 = pred_boxes.chunk(4, -1)
+    tx1, ty1, tx2, ty2 = target_boxes.chunk(4, -1)
+    
+    # Calculate intersection
+    inter_x1 = torch.max(px1, tx1)
+    inter_y1 = torch.max(py1, ty1)
+    inter_x2 = torch.min(px2, tx2)
+    inter_y2 = torch.min(py2, ty2)
+    
+    inter_w = (inter_x2 - inter_x1).clamp(0)
+    inter_h = (inter_y2 - inter_y1).clamp(0)
+    inter_area = inter_w * inter_h
+    
+    # Calculate union
+    pred_area = (px2 - px1) * (py2 - py1)
+    target_area = (tx2 - tx1) * (ty2 - ty1)
+    union_area = pred_area + target_area - inter_area + eps
+    
+    # Calculate IoU
+    iou = inter_area / union_area
+    
+    # Calculate enclosing box
+    enclose_x1 = torch.min(px1, tx1)
+    enclose_y1 = torch.min(py1, ty1)
+    enclose_x2 = torch.max(px2, tx2)
+    enclose_y2 = torch.max(py2, ty2)
+    enclose_w = enclose_x2 - enclose_x1 + eps
+    enclose_h = enclose_y2 - enclose_y1 + eps
+    
+    # Calculate center distances
+    pcx, pcy = (px1 + px2) / 2, (py1 + py2) / 2
+    tcx, tcy = (tx1 + tx2) / 2, (ty1 + ty2) / 2
+    
+    # Wise-IoU v3 with outlier degree
+    beta = inter_area / union_area
+    alpha = beta - iou
+    
+    # Distance penalty
+    center_distance = (pcx - tcx) ** 2 + (pcy - tcy) ** 2
+    enclose_diagonal = enclose_w ** 2 + enclose_h ** 2
+    
+    # WIoU v3 loss
+    wiou = iou - (alpha * center_distance) / enclose_diagonal
+    return 1 - wiou.squeeze(-1)
+
+
+def nwd_loss(pred_boxes, target_boxes, eps=1e-7):
+    """
+    Calculate Normalized Wasserstein Distance (NWD) loss.
+    
+    Args:
+        pred_boxes (torch.Tensor): Predicted boxes in xyxy format, shape (N, 4)
+        target_boxes (torch.Tensor): Target boxes in xyxy format, shape (N, 4)
+        eps (float): Small value to avoid division by zero
+        
+    Returns:
+        torch.Tensor: NWD loss values, shape (N,)
+    """
+    # Get box coordinates and convert to center format
+    px1, py1, px2, py2 = pred_boxes.chunk(4, -1)
+    tx1, ty1, tx2, ty2 = target_boxes.chunk(4, -1)
+    
+    # Calculate centers and dimensions
+    pcx, pcy = (px1 + px2) / 2, (py1 + py2) / 2
+    tcx, tcy = (tx1 + tx2) / 2, (ty1 + ty2) / 2
+    pw, ph = px2 - px1, py2 - py1
+    tw, th = tx2 - tx1, ty2 - ty1
+    
+    # Normalize by target box dimensions
+    norm_factor = torch.max(tw, th) + eps
+    
+    # Calculate normalized center distance
+    center_distance = torch.sqrt((pcx - tcx) ** 2 + (pcy - tcy) ** 2) / norm_factor
+    
+    # Calculate normalized size difference
+    w_distance = torch.abs(pw - tw) / norm_factor
+    h_distance = torch.abs(ph - th) / norm_factor
+    
+    # NWD combines center and size distances
+    nwd = center_distance + w_distance + h_distance
+    
+    # Convert to loss (lower NWD is better)
+    return nwd.squeeze(-1)
 
 
 class VarifocalLoss(nn.Module):
@@ -127,6 +298,138 @@ class RotatedBboxLoss(BboxLoss):
         return loss_iou, loss_dfl
 
 
+class SIoULoss(nn.Module):
+    """SIoU Loss for bounding box regression."""
+    
+    def __init__(self, reg_max, use_dfl=False):
+        """Initialize the SIoULoss module."""
+        super().__init__()
+        self.reg_max = reg_max
+        self.use_dfl = use_dfl
+    
+    def forward(self, pred_dist, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask):
+        """Calculate SIoU loss."""
+        weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
+        
+        # Convert to xyxy format for SIoU calculation
+        pred_xyxy = pred_bboxes[fg_mask]
+        target_xyxy = target_bboxes[fg_mask]
+        
+        # Calculate SIoU loss
+        siou_loss_values = siou_loss(pred_xyxy, target_xyxy)
+        loss_iou = (siou_loss_values.unsqueeze(-1) * weight).sum() / target_scores_sum
+        
+        # DFL loss
+        if self.use_dfl:
+            target_ltrb = bbox2dist(anchor_points, target_bboxes, self.reg_max)
+            loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask]) * weight
+            loss_dfl = loss_dfl.sum() / target_scores_sum
+        else:
+            loss_dfl = torch.tensor(0.0).to(pred_dist.device)
+        
+        return loss_iou, loss_dfl
+    
+    @staticmethod
+    def _df_loss(pred_dist, target):
+        """Distribution Focal Loss."""
+        tl = target.long()
+        tr = tl + 1
+        wl = tr - target
+        wr = 1 - wl
+        return (
+            F.cross_entropy(pred_dist, tl.view(-1), reduction="none").view(tl.shape) * wl
+            + F.cross_entropy(pred_dist, tr.view(-1), reduction="none").view(tl.shape) * wr
+        ).mean(-1, keepdim=True)
+
+
+class WIoULossV3(nn.Module):
+    """WIoU v3 Loss for bounding box regression."""
+    
+    def __init__(self, reg_max, use_dfl=False):
+        """Initialize the WIoULossV3 module."""
+        super().__init__()
+        self.reg_max = reg_max
+        self.use_dfl = use_dfl
+    
+    def forward(self, pred_dist, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask):
+        """Calculate WIoU v3 loss."""
+        weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
+        
+        # Convert to xyxy format for WIoU calculation
+        pred_xyxy = pred_bboxes[fg_mask]
+        target_xyxy = target_bboxes[fg_mask]
+        
+        # Calculate WIoU v3 loss
+        wiou_loss_values = wiou_v3_loss(pred_xyxy, target_xyxy)
+        loss_iou = (wiou_loss_values.unsqueeze(-1) * weight).sum() / target_scores_sum
+        
+        # DFL loss
+        if self.use_dfl:
+            target_ltrb = bbox2dist(anchor_points, target_bboxes, self.reg_max)
+            loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask]) * weight
+            loss_dfl = loss_dfl.sum() / target_scores_sum
+        else:
+            loss_dfl = torch.tensor(0.0).to(pred_dist.device)
+        
+        return loss_iou, loss_dfl
+    
+    @staticmethod
+    def _df_loss(pred_dist, target):
+        """Distribution Focal Loss."""
+        tl = target.long()
+        tr = tl + 1
+        wl = tr - target
+        wr = 1 - wl
+        return (
+            F.cross_entropy(pred_dist, tl.view(-1), reduction="none").view(tl.shape) * wl
+            + F.cross_entropy(pred_dist, tr.view(-1), reduction="none").view(tl.shape) * wr
+        ).mean(-1, keepdim=True)
+
+
+class NWDLoss(nn.Module):
+    """Normalized Wasserstein Distance Loss for bounding box regression."""
+    
+    def __init__(self, reg_max, use_dfl=False):
+        """Initialize the NWDLoss module."""
+        super().__init__()
+        self.reg_max = reg_max
+        self.use_dfl = use_dfl
+    
+    def forward(self, pred_dist, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask):
+        """Calculate NWD loss."""
+        weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
+        
+        # Convert to xyxy format for NWD calculation
+        pred_xyxy = pred_bboxes[fg_mask]
+        target_xyxy = target_bboxes[fg_mask]
+        
+        # Calculate NWD loss
+        nwd_loss_values = nwd_loss(pred_xyxy, target_xyxy)
+        loss_iou = (nwd_loss_values.unsqueeze(-1) * weight).sum() / target_scores_sum
+        
+        # DFL loss
+        if self.use_dfl:
+            target_ltrb = bbox2dist(anchor_points, target_bboxes, self.reg_max)
+            loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask]) * weight
+            loss_dfl = loss_dfl.sum() / target_scores_sum
+        else:
+            loss_dfl = torch.tensor(0.0).to(pred_dist.device)
+        
+        return loss_iou, loss_dfl
+    
+    @staticmethod
+    def _df_loss(pred_dist, target):
+        """Distribution Focal Loss."""
+        tl = target.long()
+        tr = tl + 1
+        wl = tr - target
+        wr = 1 - wl
+        return (
+            F.cross_entropy(pred_dist, tl.view(-1), reduction="none").view(tl.shape) * wl
+            + F.cross_entropy(pred_dist, tr.view(-1), reduction="none").view(tl.shape) * wr
+        ).mean(-1, keepdim=True)
+
+
 class KeypointLoss(nn.Module):
     """Criterion class for computing training losses."""
 
@@ -164,7 +467,18 @@ class v8DetectionLoss:
         self.use_dfl = m.reg_max > 1
 
         self.assigner = TaskAlignedAssigner(topk=10, num_classes=self.nc, alpha=0.5, beta=6.0)
-        self.bbox_loss = BboxLoss(m.reg_max - 1, use_dfl=self.use_dfl).to(device)
+        
+        # Select bbox loss function based on configuration
+        box_loss_type = getattr(h, 'box_loss', 'ciou').lower()
+        if box_loss_type == 'siou':
+            self.bbox_loss = SIoULoss(m.reg_max - 1, use_dfl=self.use_dfl).to(device)
+        elif box_loss_type == 'wiou3':
+            self.bbox_loss = WIoULossV3(m.reg_max - 1, use_dfl=self.use_dfl).to(device)
+        elif box_loss_type == 'nwd':
+            self.bbox_loss = NWDLoss(m.reg_max - 1, use_dfl=self.use_dfl).to(device)
+        else:  # default to ciou
+            self.bbox_loss = BboxLoss(m.reg_max - 1, use_dfl=self.use_dfl).to(device)
+        
         self.proj = torch.arange(m.reg_max, dtype=torch.float, device=device)
 
     def preprocess(self, targets, batch_size, scale_tensor):

@@ -2,7 +2,12 @@
 
 __version__ = "8.1.35"
 
-from ultralytics.data.explorer.explorer import Explorer
+# 简化导入，避免循环依赖
+try:
+    from ultralytics.data.explorer.explorer import Explorer
+except ImportError:
+    Explorer = None
+
 from ultralytics.models import RTDETR, SAM, YOLO, YOLOWorld
 from ultralytics.models.fastsam import FastSAM
 from ultralytics.models.nas import NAS
@@ -22,5 +27,7 @@ __all__ = (
     "checks",
     "download",
     "settings",
-    "Explorer",
 )
+
+if Explorer is not None:
+    __all__ += ("Explorer",)

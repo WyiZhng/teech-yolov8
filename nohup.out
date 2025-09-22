@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/yolov8_train_env.py", line 5, in <module>
+    import torch
+ModuleNotFoundError: No module named 'torch'
