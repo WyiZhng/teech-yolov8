@@ -2,3 +2,364 @@ Traceback (most recent call last):
   File "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/yolov8_train_env.py", line 5, in <module>
     import torch
 ModuleNotFoundError: No module named 'torch'
+已设置随机种子为: 42
+已启用确定性训练模式，确保结果可重现
+New https://pypi.org/project/ultralytics/8.3.202 available 😃 Update with 'pip install -U ultralytics'
+Ultralytics 8.3.201 🚀 Python-3.8.20 torch-2.0.1+cu117 CUDA:0 (NVIDIA GeForce RTX 4090, 24217MiB)
+[34m[1mengine/trainer: [0magnostic_nms=False, amp=True, augment=False, auto_augment=randaugment, batch=64, bgr=0.0, box=7.5, cache=False, cfg=None, classes=None, close_mosaic=10, cls=0.5, compile=False, conf=None, copy_paste=0.0, copy_paste_mode=flip, cos_lr=False, cutmix=0.0, data=data.yaml, degrees=0.0, deterministic=True, device=0, dfl=1.5, dnn=False, dropout=0.0, dynamic=False, embed=None, epochs=20, erasing=0.4, exist_ok=True, fliplr=0.5, flipud=0.0, format=torchscript, fraction=1.0, freeze=None, half=False, hsv_h=0.015, hsv_s=0.7, hsv_v=0.4, imgsz=640, int8=False, iou=0.7, keras=False, kobj=1.0, line_width=None, lr0=0.01, lrf=0.01, mask_ratio=4, max_det=300, mixup=0.0, mode=train, model=yolov8n.pt, momentum=0.937, mosaic=1.0, multi_scale=False, name=yolov8n_siou_dental, nbs=64, nms=False, opset=None, optimize=False, optimizer=Adam, overlap_mask=True, patience=100, perspective=0.0, plots=True, pose=12.0, pretrained=True, profile=False, project=runs/train_env_siou, rect=False, resume=False, retina_masks=False, save=True, save_conf=False, save_crop=False, save_dir=/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/runs/train_env_siou/yolov8n_siou_dental, save_frames=False, save_json=False, save_period=10, save_txt=False, scale=0.5, seed=42, shear=0.0, show=False, show_boxes=True, show_conf=True, show_labels=True, simplify=True, single_cls=False, source=None, split=val, stream_buffer=False, task=detect, time=None, tracker=botsort.yaml, translate=0.1, val=True, verbose=True, vid_stride=1, visualize=False, warmup_bias_lr=0.1, warmup_epochs=3.0, warmup_momentum=0.8, weight_decay=0.0005, workers=0, workspace=None
+Overriding model.yaml nc=80 with nc=2
+
+                   from  n    params  module                                       arguments                     
+  0                  -1  1       464  ultralytics.nn.modules.conv.Conv             [3, 16, 3, 2]                 
+  1                  -1  1      4672  ultralytics.nn.modules.conv.Conv             [16, 32, 3, 2]                
+  2                  -1  1      7360  ultralytics.nn.modules.block.C2f             [32, 32, 1, True]             
+  3                  -1  1     18560  ultralytics.nn.modules.conv.Conv             [32, 64, 3, 2]                
+  4                  -1  2     49664  ultralytics.nn.modules.block.C2f             [64, 64, 2, True]             
+  5                  -1  1     73984  ultralytics.nn.modules.conv.Conv             [64, 128, 3, 2]               
+  6                  -1  2    197632  ultralytics.nn.modules.block.C2f             [128, 128, 2, True]           
+  7                  -1  1    295424  ultralytics.nn.modules.conv.Conv             [128, 256, 3, 2]              
+  8                  -1  1    460288  ultralytics.nn.modules.block.C2f             [256, 256, 1, True]           
+  9                  -1  1    164608  ultralytics.nn.modules.block.SPPF            [256, 256, 5]                 
+ 10                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+ 11             [-1, 6]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 12                  -1  1    148224  ultralytics.nn.modules.block.C2f             [384, 128, 1]                 
+ 13                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+ 14             [-1, 4]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 15                  -1  1     37248  ultralytics.nn.modules.block.C2f             [192, 64, 1]                  
+ 16                  -1  1     36992  ultralytics.nn.modules.conv.Conv             [64, 64, 3, 2]                
+ 17            [-1, 12]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 18                  -1  1    123648  ultralytics.nn.modules.block.C2f             [192, 128, 1]                 
+ 19                  -1  1    147712  ultralytics.nn.modules.conv.Conv             [128, 128, 3, 2]              
+ 20             [-1, 9]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 21                  -1  1    493056  ultralytics.nn.modules.block.C2f             [384, 256, 1]                 
+ 22        [15, 18, 21]  1    751702  ultralytics.nn.modules.head.Detect           [2, [64, 128, 256]]           
+Traceback (most recent call last):
+  File "yolov8_train_env.py", line 139, in <module>
+    results = trainer.train(
+  File "yolov8_train_env.py", line 129, in train
+    return self.model.train(**kwargs)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/engine/model.py", line 797, in train
+    self.trainer.model = self.trainer.get_model(weights=self.model if self.ckpt else None, cfg=self.model.yaml)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/models/yolo/detect/train.py", line 164, in get_model
+    model = DetectionModel(cfg, nc=self.data["nc"], ch=self.data["channels"], verbose=verbose and RANK == -1)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/nn/tasks.py", line 428, in __init__
+    self.info()
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/nn/tasks.py", line 278, in info
+    return model_info(self, detailed=detailed, verbose=verbose, imgsz=imgsz)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/utils/torch_utils.py", line 355, in model_info
+    flops = get_flops(model, imgsz)  # imgsz may be int or list, i.e. imgsz=640 or imgsz=[640, 320]
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/utils/torch_utils.py", line 440, in get_flops
+    flops = thop.profile(deepcopy(model), inputs=[im], verbose=False)[0] / 1e9 * 2  # stride GFLOPs
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 270, in _reconstruct
+    state = deepcopy(state, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 146, in deepcopy
+    y = copier(x, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 230, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 172, in deepcopy
+    y = _reconstruct(x, memo, *rv)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 296, in _reconstruct
+    value = deepcopy(value, memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/copy.py", line 153, in deepcopy
+    y = copier(memo)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/torch/nn/parameter.py", line 55, in __deepcopy__
+    result = type(self)(self.data.clone(memory_format=torch.preserve_format), self.requires_grad)
+KeyboardInterrupt
+已设置随机种子为: 42
+已启用确定性训练模式，确保结果可重现
+自动选择GPU 1，可用显存约 23.26 GB
+Transferred 219/437 items from pretrained weights
+New https://pypi.org/project/ultralytics/8.3.203 available 😃 Update with 'pip install -U ultralytics'
+Ultralytics 8.3.201 🚀 Python-3.8.20 torch-2.0.1+cu117 CUDA:1 (NVIDIA GeForce RTX 4090, 24217MiB)
+[34m[1mengine/trainer: [0magnostic_nms=False, amp=True, augment=False, auto_augment=randaugment, batch=24, bgr=0.0, box=10.0, cache=disk, cfg=None, classes=None, close_mosaic=8, cls=0.7, compile=False, conf=None, copy_paste=0.0, copy_paste_mode=flip, cos_lr=True, cutmix=0.0, data=data.yaml, degrees=0.0, deterministic=True, device=1, dfl=1.6, dnn=False, dropout=0.0, dynamic=False, embed=None, epochs=80, erasing=0.4, exist_ok=True, fliplr=0.5, flipud=0.0, format=torchscript, fraction=1.0, freeze=None, half=False, hsv_h=0.005, hsv_s=0.5, hsv_v=0.2, imgsz=896, int8=False, iou=0.7, keras=False, kobj=1.0, line_width=None, lr0=0.0008, lrf=0.05, mask_ratio=4, max_det=1500, mixup=0.15, mode=train, model=/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/ultralytics_local/cfg/models/v8/yolov8n-p2-dental.yaml, momentum=0.937, mosaic=0.5, multi_scale=False, name=yolov8n_siou_dental_p2, nbs=64, nms=False, opset=None, optimize=False, optimizer=AdamW, overlap_mask=True, patience=40, perspective=0.0, plots=True, pose=12.0, pretrained=/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/yolov8n.pt, profile=False, project=runs/train_env_siou, rect=False, resume=False, retina_masks=False, save=True, save_conf=False, save_crop=False, save_dir=/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/runs/train_env_siou/yolov8n_siou_dental_p2, save_frames=False, save_json=False, save_period=-1, save_txt=False, scale=0.4, seed=42, shear=0.0, show=False, show_boxes=True, show_conf=True, show_labels=True, simplify=True, single_cls=False, source=None, split=val, stream_buffer=False, task=detect, time=None, tracker=botsort.yaml, translate=0.05, val=True, verbose=True, vid_stride=1, visualize=False, warmup_bias_lr=0.1, warmup_epochs=5, warmup_momentum=0.8, weight_decay=0.0005, workers=2, workspace=None
+
+                   from  n    params  module                                       arguments                     
+  0                  -1  1       464  ultralytics.nn.modules.conv.Conv             [3, 16, 3, 2]                 
+  1                  -1  1      4672  ultralytics.nn.modules.conv.Conv             [16, 32, 3, 2]                
+  2                  -1  1      7360  ultralytics.nn.modules.block.C2f             [32, 32, 1, True]             
+  3                  -1  1     18560  ultralytics.nn.modules.conv.Conv             [32, 64, 3, 2]                
+  4                  -1  2     49664  ultralytics.nn.modules.block.C2f             [64, 64, 2, True]             
+  5                  -1  1     73984  ultralytics.nn.modules.conv.Conv             [64, 128, 3, 2]               
+  6                  -1  2    197632  ultralytics.nn.modules.block.C2f             [128, 128, 2, True]           
+  7                  -1  1    295424  ultralytics.nn.modules.conv.Conv             [128, 256, 3, 2]              
+  8                  -1  1    460288  ultralytics.nn.modules.block.C2f             [256, 256, 1, True]           
+  9                  -1  1    164608  ultralytics.nn.modules.block.SPPF            [256, 256, 5]                 
+ 10                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+ 11             [-1, 6]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 12                  -1  1    148224  ultralytics.nn.modules.block.C2f             [384, 128, 1]                 
+ 13                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+ 14             [-1, 4]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 15                  -1  1     37248  ultralytics.nn.modules.block.C2f             [192, 64, 1]                  
+ 16                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+ 17             [-1, 2]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 18                  -1  1      9408  ultralytics.nn.modules.block.C2f             [96, 32, 1]                   
+ 19                  -1  1      9280  ultralytics.nn.modules.conv.Conv             [32, 32, 3, 2]                
+ 20            [-1, 15]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 21                  -1  1     31104  ultralytics.nn.modules.block.C2f             [96, 64, 1]                   
+ 22                  -1  1     36992  ultralytics.nn.modules.conv.Conv             [64, 64, 3, 2]                
+ 23            [-1, 12]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 24                  -1  1    123648  ultralytics.nn.modules.block.C2f             [192, 128, 1]                 
+ 25                  -1  1    147712  ultralytics.nn.modules.conv.Conv             [128, 128, 3, 2]              
+ 26             [-1, 9]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 27                  -1  1    493056  ultralytics.nn.modules.block.C2f             [384, 256, 1]                 
+ 28    [18, 21, 24, 27]  1    617496  ultralytics.nn.modules.head.Detect           [2, [32, 64, 128, 256]]       
+YOLOv8n-p2-dental summary: 160 layers, 2,926,824 parameters, 2,926,808 gradients, 12.4 GFLOPs
+
+Transferred 437/437 items from pretrained weights
+Freezing layer 'model.28.dfl.conv.weight'
+[34m[1mAMP: [0mrunning Automatic Mixed Precision (AMP) checks...
+[34m[1mAMP: [0mchecks passed ✅
+[34m[1mtrain: [0mFast image access ✅ (ping: 0.0±0.0 ms, read: 1525.9±1530.4 MB/s, size: 194.7 KB)
+[K[34m[1mtrain: [0mScanning /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/labels.cache... 1781 images, 3279 backgrounds, 12 corrupt: 100% ━━━━━━━━━━━━ 5011/5011 600.5Mit/s 0.0s[K[34m[1mtrain: [0mScanning /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/labels.cache... 1781 images, 3279 backgrounds, 12 corrupt: 100% ━━━━━━━━━━━━ 5011/5011 43.1Mit/s 0.0s
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1141-01_1732595713489_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.5364]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1209-01_1732857661861_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.5371]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1213-01_1732862150627_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.2108]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1214-00_1732862917124_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.7461]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1214-00_1732862917124_Left_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.3033]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1115-01_1732364427758_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.4638      1.8128      1.7514      1.6831]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1140-00_1732538036389_Left_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.3588      1.2879]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1140-00_1732538036389_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [      1.104]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1187-01_1732714576631_Left_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.2392      1.1746]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1187-01_1732714576631_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [      1.504      1.3617      1.8549      1.7835      1.3617      1.5463       1.323      1.2087]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1188-00_1732714947165_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [      1.204      1.0892       1.485      1.4278      1.0892       1.238      1.0582]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1188-00_1732714947165_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.5523      1.8524      1.3561      1.0925       1.402      1.4382      1.4074       1.742]
+[K[34m[1mtrain: [0mCaching images (12.4GB Disk): 30% ━━━╸──────── 1519/4999 4.6Kit/s 0.1s<0.8s[K[34m[1mtrain: [0mCaching images (22.3GB Disk): 53% ━━━━━━────── 2641/4999 6.4Kit/s 0.2s<0.4s[K[34m[1mtrain: [0mCaching images (22.5GB Disk): 55% ━━━━━━╸───── 2725/4999 4.7Kit/s 0.3s<0.5s[K[34m[1mtrain: [0mCaching images (22.7GB Disk): 56% ━━━━━━╸───── 2793/4999 3.5Kit/s 0.4s<0.6s[K[34m[1mtrain: [0mCaching images (22.9GB Disk): 58% ━━━━━━╸───── 2882/4999 2.7Kit/s 0.5s<0.8s[K[34m[1mtrain: [0mCaching images (23.1GB Disk): 60% ━━━━━━━───── 2979/4999 2.2Kit/s 0.6s<0.9s[K[34m[1mtrain: [0mCaching images (23.3GB Disk): 62% ━━━━━━━───── 3076/4999 1.8Kit/s 0.7s<1.1s[K[34m[1mtrain: [0mCaching images (23.5GB Disk): 63% ━━━━━━━╸──── 3168/4999 1.5Kit/s 0.8s<1.2s[K[34m[1mtrain: [0mCaching images (23.7GB Disk): 65% ━━━━━━━╸──── 3236/4999 1.3Kit/s 0.9s<1.4s[K[34m[1mtrain: [0mCaching images (24.0GB Disk): 66% ━━━━━━━╸──── 3307/4999 1.1Kit/s 1.1s<1.6s[K[34m[1mtrain: [0mCaching images (24.2GB Disk): 68% ━━━━━━━━──── 3390/4999 969.3it/s 1.2s<1.7s[K[34m[1mtrain: [0mCaching images (24.4GB Disk): 70% ━━━━━━━━──── 3492/4999 972.0it/s 1.3s<1.6s[K[34m[1mtrain: [0mCaching images (24.7GB Disk): 72% ━━━━━━━━╸─── 3581/4999 926.7it/s 1.4s<1.5s[K[34m[1mtrain: [0mCaching images (24.9GB Disk): 73% ━━━━━━━━╸─── 3673/4999 913.0it/s 1.5s<1.5s[K[34m[1mtrain: [0mCaching images (25.1GB Disk): 75% ━━━━━━━━━─── 3762/4999 895.8it/s 1.6s<1.4s[K[34m[1mtrain: [0mCaching images (25.4GB Disk): 77% ━━━━━━━━━─── 3857/4999 898.3it/s 1.7s<1.3s[K[34m[1mtrain: [0mCaching images (25.5GB Disk): 78% ━━━━━━━━━─── 3911/4999 774.8it/s 1.8s<1.4s[K[34m[1mtrain: [0mCaching images (25.8GB Disk): 79% ━━━━━━━━━─── 3943/4999 629.8it/s 1.9s<1.7s[K[34m[1mtrain: [0mCaching images (26.0GB Disk): 79% ━━━━━━━━━╸── 3973/4999 473.3it/s 2.2s<2.2s[K[34m[1mtrain: [0mCaching images (26.3GB Disk): 80% ━━━━━━━━━╸── 4013/4999 439.1it/s 2.3s<2.2s[K[34m[1mtrain: [0mCaching images (26.6GB Disk): 81% ━━━━━━━━━╸── 4052/4999 403.0it/s 2.4s<2.3s[K[34m[1mtrain: [0mCaching images (26.8GB Disk): 82% ━━━━━━━━━╸── 4084/4999 349.5it/s 2.6s<2.6s[K[34m[1mtrain: [0mCaching images (27.1GB Disk): 82% ━━━━━━━━━╸── 4122/4999 356.5it/s 2.7s<2.5s[K[34m[1mtrain: [0mCaching images (27.4GB Disk): 83% ━━━━━━━━━━── 4170/4999 391.6it/s 2.8s<2.1s[K[34m[1mtrain: [0mCaching images (27.7GB Disk): 84% ━━━━━━━━━━── 4221/4999 409.6it/s 2.9s<1.9s[K[34m[1mtrain: [0mCaching images (27.9GB Disk): 85% ━━━━━━━━━━── 4261/4999 397.1it/s 3.0s<1.9s[K[34m[1mtrain: [0mCaching images (28.2GB Disk): 86% ━━━━━━━━━━── 4298/4999 372.4it/s 3.1s<1.9s[K[34m[1mtrain: [0mCaching images (28.4GB Disk): 87% ━━━━━━━━━━── 4342/4999 385.6it/s 3.2s<1.7s[K[34m[1mtrain: [0mCaching images (28.7GB Disk): 87% ━━━━━━━━━━── 4372/4999 359.3it/s 3.3s<1.7s[K[34m[1mtrain: [0mCaching images (29.0GB Disk): 89% ━━━━━━━━━━╸─ 4429/4999 419.0it/s 3.4s<1.4s[K[34m[1mtrain: [0mCaching images (29.3GB Disk): 90% ━━━━━━━━━━╸─ 4489/4999 459.8it/s 3.5s<1.1s[K[34m[1mtrain: [0mCaching images (29.6GB Disk): 91% ━━━━━━━━━━╸─ 4553/4999 513.8it/s 3.6s<0.9s[K[34m[1mtrain: [0mCaching images (29.7GB Disk): 92% ━━━━━━━━━━╸─ 4577/4999 405.4it/s 3.8s<1.0s[K[34m[1mtrain: [0mCaching images (30.1GB Disk): 93% ━━━━━━━━━━━─ 4662/4999 538.6it/s 3.9s<0.6s[K[34m[1mtrain: [0mCaching images (30.3GB Disk): 94% ━━━━━━━━━━━─ 4717/4999 525.1it/s 4.0s<0.5s[K[34m[1mtrain: [0mCaching images (30.5GB Disk): 95% ━━━━━━━━━━━─ 4763/4999 504.9it/s 4.1s<0.5s[K[34m[1mtrain: [0mCaching images (30.7GB Disk): 96% ━━━━━━━━━━━╸ 4814/4999 499.9it/s 4.2s<0.4s[K[34m[1mtrain: [0mCaching images (30.9GB Disk): 97% ━━━━━━━━━━━╸ 4857/4999 477.7it/s 4.3s<0.3s[K[34m[1mtrain: [0mCaching images (31.1GB Disk): 98% ━━━━━━━━━━━╸ 4876/4999 381.8it/s 4.4s<0.3s[K[34m[1mtrain: [0mCaching images (31.4GB Disk): 98% ━━━━━━━━━━━╸ 4907/4999 356.0it/s 4.5s<0.3s[K[34m[1mtrain: [0mCaching images (31.7GB Disk): 100% ━━━━━━━━━━━╸ 4988/4999 421.6it/s 4.7s<0.0s[K[34m[1mtrain: [0mCaching images (31.8GB Disk): 100% ━━━━━━━━━━━━ 4999/4999 1.1Kit/s 4.7s[K[34m[1mtrain: [0mCaching images (31.8GB Disk): 100% ━━━━━━━━━━━━ 4999/4999 1.1Kit/s 4.7s
+[34m[1mval: [0mFast image access ✅ (ping: 0.0±0.0 ms, read: 289.7±377.9 MB/s, size: 94.9 KB)
+[K[34m[1mval: [0mScanning /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/valid/labels.cache... 214 images, 421 backgrounds, 2 corrupt: 100% ━━━━━━━━━━━━ 627/627 27.1Mit/s 0.0s[K[34m[1mval: [0mScanning /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/valid/labels.cache... 214 images, 421 backgrounds, 2 corrupt: 100% ━━━━━━━━━━━━ 627/627 1.0Mit/s 0.0s
+[34m[1mval: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/valid/images/anonymous_003-008-1139-01_1732537527555_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     2.2001      2.7448      2.5225      2.7579      3.0995]
+[34m[1mval: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/valid/images/anonymous_003-008-1139-01_1732537527555_Left_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     2.5075      3.1249       2.875      3.1398      3.5327]
+[K[34m[1mval: [0mCaching images (0.0GB Disk): 0% ──────────── 1/625 2.1it/s 0.1s<4:58[K[34m[1mval: [0mCaching images (0.1GB Disk): 9% ━─────────── 58/625 113.3it/s 0.3s<5.0s[K[34m[1mval: [0mCaching images (0.2GB Disk): 16% ━╸────────── 101/625 156.9it/s 0.5s<3.3s[K[34m[1mval: [0mCaching images (0.5GB Disk): 24% ━━╸───────── 153/625 202.5it/s 0.6s<2.3s[K[34m[1mval: [0mCaching images (0.6GB Disk): 30% ━━━╸──────── 190/625 219.1it/s 0.8s<2.0s[K[34m[1mval: [0mCaching images (0.9GB Disk): 45% ━━━━━─────── 279/625 415.3it/s 0.9s<0.8s[K[34m[1mval: [0mCaching images (1.0GB Disk): 46% ━━━━━─────── 286/625 304.7it/s 1.0s<1.1s[K[34m[1mval: [0mCaching images (1.0GB Disk): 46% ━━━━━╸────── 289/625 221.5it/s 1.1s<1.5s[K[34m[1mval: [0mCaching images (1.6GB Disk): 57% ━━━━━━╸───── 355/625 231.5it/s 1.4s<1.2s[K[34m[1mval: [0mCaching images (1.9GB Disk): 63% ━━━━━━━╸──── 391/625 268.1it/s 1.5s<0.9s[K[34m[1mval: [0mCaching images (2.1GB Disk): 66% ━━━━━━━╸──── 410/625 226.0it/s 1.6s<1.0s[K[34m[1mval: [0mCaching images (2.5GB Disk): 72% ━━━━━━━━╸─── 447/625 257.1it/s 1.8s<0.7s[K[34m[1mval: [0mCaching images (2.8GB Disk): 77% ━━━━━━━━━─── 484/625 251.9it/s 1.9s<0.6s[K[34m[1mval: [0mCaching images (3.0GB Disk): 86% ━━━━━━━━━━── 536/625 332.1it/s 2.0s<0.3s[K[34m[1mval: [0mCaching images (3.1GB Disk): 89% ━━━━━━━━━━╸─ 557/625 284.8it/s 2.1s<0.2s[K[34m[1mval: [0mCaching images (3.3GB Disk): 93% ━━━━━━━━━━━─ 581/625 243.7it/s 2.3s<0.2s[K[34m[1mval: [0mCaching images (3.5GB Disk): 96% ━━━━━━━━━━━╸ 602/625 182.7it/s 2.8s<0.1s[K[34m[1mval: [0mCaching images (3.7GB Disk): 100% ━━━━━━━━━━━╸ 624/625 153.4it/s 3.1s<0.0s[K[34m[1mval: [0mCaching images (3.7GB Disk): 100% ━━━━━━━━━━━━ 625/625 188.4it/s 3.3s[K[34m[1mval: [0mCaching images (3.7GB Disk): 100% ━━━━━━━━━━━━ 625/625 188.3it/s 3.3s
+Plotting labels to /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/runs/train_env_siou/yolov8n_siou_dental_p2/labels.jpg... 
+[34m[1moptimizer:[0m AdamW(lr=0.0008, momentum=0.937) with parameter groups 70 weight(decay=0.0), 79 weight(decay=0.0005625000000000001), 78 bias(decay=0.0)
+Image sizes 896 train, 896 val
+Using 2 dataloader workers
+Logging results to [1m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/runs/train_env_siou/yolov8n_siou_dental_p2[0m
+Starting training for 80 epochs...
+
+      Epoch    GPU_mem   box_loss   cls_loss   dfl_loss  Instances       Size
+[K: 0% ──────────── 0/209  0.6s
+⚠️ 检测到显存不足，正在第 1 次自动调整参数后重试...
+  -> 将 batch 大小从 24 降至 12
+New https://pypi.org/project/ultralytics/8.3.203 available 😃 Update with 'pip install -U ultralytics'
+Ultralytics 8.3.201 🚀 Python-3.8.20 torch-2.0.1+cu117 CUDA:1 (NVIDIA GeForce RTX 4090, 24217MiB)
+[34m[1mengine/trainer: [0magnostic_nms=False, amp=True, augment=False, auto_augment=randaugment, batch=12, bgr=0.0, box=10.0, cache=disk, cfg=None, classes=None, close_mosaic=8, cls=0.7, compile=False, conf=None, copy_paste=0.0, copy_paste_mode=flip, cos_lr=True, cutmix=0.0, data=data.yaml, degrees=0.0, deterministic=True, device=1, dfl=1.6, dnn=False, dropout=0.0, dynamic=False, embed=None, epochs=80, erasing=0.4, exist_ok=True, fliplr=0.5, flipud=0.0, format=torchscript, fraction=1.0, freeze=None, half=False, hsv_h=0.005, hsv_s=0.5, hsv_v=0.2, imgsz=896, int8=False, iou=0.7, keras=False, kobj=1.0, line_width=None, lr0=0.0008, lrf=0.05, mask_ratio=4, max_det=1500, mixup=0.15, mode=train, model=/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/ultralytics_local/cfg/models/v8/yolov8n-p2-dental.yaml, momentum=0.937, mosaic=0.5, multi_scale=False, name=yolov8n_siou_dental_p2, nbs=64, nms=False, opset=None, optimize=False, optimizer=AdamW, overlap_mask=True, patience=40, perspective=0.0, plots=True, pose=12.0, pretrained=/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/yolov8n.pt, profile=False, project=runs/train_env_siou, rect=False, resume=False, retina_masks=False, save=True, save_conf=False, save_crop=False, save_dir=/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/runs/train_env_siou/yolov8n_siou_dental_p2, save_frames=False, save_json=False, save_period=-1, save_txt=False, scale=0.4, seed=42, shear=0.0, show=False, show_boxes=True, show_conf=True, show_labels=True, simplify=True, single_cls=False, source=None, split=val, stream_buffer=False, task=detect, time=None, tracker=botsort.yaml, translate=0.05, val=True, verbose=True, vid_stride=1, visualize=False, warmup_bias_lr=0.1, warmup_epochs=5, warmup_momentum=0.8, weight_decay=0.0005, workers=2, workspace=None
+
+                   from  n    params  module                                       arguments                     
+  0                  -1  1       464  ultralytics.nn.modules.conv.Conv             [3, 16, 3, 2]                 
+  1                  -1  1      4672  ultralytics.nn.modules.conv.Conv             [16, 32, 3, 2]                
+  2                  -1  1      7360  ultralytics.nn.modules.block.C2f             [32, 32, 1, True]             
+  3                  -1  1     18560  ultralytics.nn.modules.conv.Conv             [32, 64, 3, 2]                
+  4                  -1  2     49664  ultralytics.nn.modules.block.C2f             [64, 64, 2, True]             
+  5                  -1  1     73984  ultralytics.nn.modules.conv.Conv             [64, 128, 3, 2]               
+  6                  -1  2    197632  ultralytics.nn.modules.block.C2f             [128, 128, 2, True]           
+  7                  -1  1    295424  ultralytics.nn.modules.conv.Conv             [128, 256, 3, 2]              
+  8                  -1  1    460288  ultralytics.nn.modules.block.C2f             [256, 256, 1, True]           
+  9                  -1  1    164608  ultralytics.nn.modules.block.SPPF            [256, 256, 5]                 
+ 10                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+ 11             [-1, 6]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 12                  -1  1    148224  ultralytics.nn.modules.block.C2f             [384, 128, 1]                 
+ 13                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+ 14             [-1, 4]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 15                  -1  1     37248  ultralytics.nn.modules.block.C2f             [192, 64, 1]                  
+ 16                  -1  1         0  torch.nn.modules.upsampling.Upsample         [None, 2, 'nearest']          
+ 17             [-1, 2]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 18                  -1  1      9408  ultralytics.nn.modules.block.C2f             [96, 32, 1]                   
+ 19                  -1  1      9280  ultralytics.nn.modules.conv.Conv             [32, 32, 3, 2]                
+ 20            [-1, 15]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 21                  -1  1     31104  ultralytics.nn.modules.block.C2f             [96, 64, 1]                   
+ 22                  -1  1     36992  ultralytics.nn.modules.conv.Conv             [64, 64, 3, 2]                
+ 23            [-1, 12]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 24                  -1  1    123648  ultralytics.nn.modules.block.C2f             [192, 128, 1]                 
+ 25                  -1  1    147712  ultralytics.nn.modules.conv.Conv             [128, 128, 3, 2]              
+ 26             [-1, 9]  1         0  ultralytics.nn.modules.conv.Concat           [1]                           
+ 27                  -1  1    493056  ultralytics.nn.modules.block.C2f             [384, 256, 1]                 
+ 28    [18, 21, 24, 27]  1    617496  ultralytics.nn.modules.head.Detect           [2, [32, 64, 128, 256]]       
+YOLOv8n-p2-dental summary: 160 layers, 2,926,824 parameters, 2,926,808 gradients, 12.4 GFLOPs
+
+Transferred 437/437 items from pretrained weights
+Freezing layer 'model.28.dfl.conv.weight'
+[34m[1mAMP: [0mrunning Automatic Mixed Precision (AMP) checks...
+[34m[1mAMP: [0mchecks passed ✅
+[34m[1mtrain: [0mFast image access ✅ (ping: 0.0±0.0 ms, read: 1109.4±1514.4 MB/s, size: 225.1 KB)
+[K[34m[1mtrain: [0mScanning /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/labels.cache... 1781 images, 3279 backgrounds, 12 corrupt: 100% ━━━━━━━━━━━━ 5011/5011 568.0Mit/s 0.0s[K[34m[1mtrain: [0mScanning /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/labels.cache... 1781 images, 3279 backgrounds, 12 corrupt: 100% ━━━━━━━━━━━━ 5011/5011 53.8Mit/s 0.0s
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1141-01_1732595713489_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.5364]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1209-01_1732857661861_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.5371]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1213-01_1732862150627_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.2108]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1214-00_1732862917124_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.7461]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-007-1214-00_1732862917124_Left_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.3033]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1115-01_1732364427758_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.4638      1.8128      1.7514      1.6831]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1140-00_1732538036389_Left_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.3588      1.2879]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1140-00_1732538036389_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [      1.104]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1187-01_1732714576631_Left_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.2392      1.1746]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1187-01_1732714576631_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [      1.504      1.3617      1.8549      1.7835      1.3617      1.5463       1.323      1.2087]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1188-00_1732714947165_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [      1.204      1.0892       1.485      1.4278      1.0892       1.238      1.0582]
+[34m[1mtrain: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/train/images/anonymous_003-008-1188-00_1732714947165_Right_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     1.5523      1.8524      1.3561      1.0925       1.402      1.4382      1.4074       1.742]
+[K[34m[1mtrain: [0mCaching images (0.0GB Disk): 0% ──────────── 1/4999 1.8it/s 0.2s<46:05[K[34m[1mtrain: [0mCaching images (3.8GB Disk): 12% ━─────────── 584/4999 1.7Kit/s 0.3s<2.5s[K[34m[1mtrain: [0mCaching images (31.8GB Disk): 100% ━━━━━━━━━━━━ 4999/4999 14.4Kit/s 0.3s[K[34m[1mtrain: [0mCaching images (31.8GB Disk): 100% ━━━━━━━━━━━━ 4999/4999 14.4Kit/s 0.3s
+[34m[1mval: [0mFast image access ✅ (ping: 0.0±0.0 ms, read: 578.3±427.6 MB/s, size: 125.8 KB)
+[K[34m[1mval: [0mScanning /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/valid/labels.cache... 214 images, 421 backgrounds, 2 corrupt: 100% ━━━━━━━━━━━━ 627/627 40.5Mit/s 0.0s[K[34m[1mval: [0mScanning /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/valid/labels.cache... 214 images, 421 backgrounds, 2 corrupt: 100% ━━━━━━━━━━━━ 627/627 3.9Mit/s 0.0s
+[34m[1mval: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/valid/images/anonymous_003-008-1139-01_1732537527555_Frontal_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     2.2001      2.7448      2.5225      2.7579      3.0995]
+[34m[1mval: [0m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/valid/images/anonymous_003-008-1139-01_1732537527555_Left_Lateral_View.jpg: ignoring corrupt image/label: non-normalized or out of bounds coordinates [     2.5075      3.1249       2.875      3.1398      3.5327]
+[K[34m[1mval: [0mCaching images (3.7GB Disk): 100% ━━━━━━━━━━━━ 625/625 34.9Kit/s 0.0s[K[34m[1mval: [0mCaching images (3.7GB Disk): 100% ━━━━━━━━━━━━ 625/625 34.7Kit/s 0.0s
+Plotting labels to /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/runs/train_env_siou/yolov8n_siou_dental_p2/labels.jpg... 
+[34m[1moptimizer:[0m AdamW(lr=0.0008, momentum=0.937) with parameter groups 70 weight(decay=0.0), 79 weight(decay=0.00046875), 78 bias(decay=0.0)
+Image sizes 896 train, 896 val
+Using 2 dataloader workers
+Logging results to [1m/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/runs/train_env_siou/yolov8n_siou_dental_p2[0m
+Starting training for 80 epochs...
+
+      Epoch    GPU_mem   box_loss   cls_loss   dfl_loss  Instances       Size
+[K: 0% ──────────── 0/417  0.4s
+Traceback (most recent call last):
+  File "yolov8_train_env.py", line 278, in <module>
+    results = safe_train(trainer, training_params)
+  File "yolov8_train_env.py", line 58, in safe_train
+    return trainer.train(**params)
+  File "yolov8_train_env.py", line 226, in train
+    return self.model.train(**kwargs)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/engine/model.py", line 800, in train
+    self.trainer.train()
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/engine/trainer.py", line 235, in train
+    self._do_train()
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/engine/trainer.py", line 429, in _do_train
+    self.scaler.scale(self.loss).backward()
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+RuntimeError: cuDNN error: CUDNN_STATUS_NOT_INITIALIZED
+已设置随机种子为: 42
+已启用确定性训练模式，确保结果可重现
+自动选择GPU 1，可用显存约 22.88 GB
+Transferred 219/437 items from pretrained weights
+New https://pypi.org/project/ultralytics/8.3.203 available 😃 Update with 'pip install -U ultralytics'
+Ultralytics 8.3.201 🚀 Python-3.8.20 torch-2.0.1+cu117 CUDA:1 (NVIDIA GeForce RTX 4090, 24217MiB)
+⚠️ 检测到显存不足，正在第 1 次自动调整参数后重试...
+  -> 将 batch 大小从 24 降至 12
+New https://pypi.org/project/ultralytics/8.3.203 available 😃 Update with 'pip install -U ultralytics'
+Ultralytics 8.3.201 🚀 Python-3.8.20 torch-2.0.1+cu117 CUDA:1 (NVIDIA GeForce RTX 4090, 24217MiB)
+⚠️ 检测到显存不足，正在第 2 次自动调整参数后重试...
+  -> 将 batch 大小从 12 降至 6
+New https://pypi.org/project/ultralytics/8.3.203 available 😃 Update with 'pip install -U ultralytics'
+Ultralytics 8.3.201 🚀 Python-3.8.20 torch-2.0.1+cu117 CUDA:1 (NVIDIA GeForce RTX 4090, 24217MiB)
+⚠️ 检测到显存不足，正在第 3 次自动调整参数后重试...
+  -> 将 batch 大小从 6 降至 4
+New https://pypi.org/project/ultralytics/8.3.203 available 😃 Update with 'pip install -U ultralytics'
+Ultralytics 8.3.201 🚀 Python-3.8.20 torch-2.0.1+cu117 CUDA:1 (NVIDIA GeForce RTX 4090, 24217MiB)
+⚠️ 检测到显存不足，正在第 4 次自动调整参数后重试...
+  -> 将训练分辨率从 896 调整为 768
+New https://pypi.org/project/ultralytics/8.3.203 available 😃 Update with 'pip install -U ultralytics'
+Ultralytics 8.3.201 🚀 Python-3.8.20 torch-2.0.1+cu117 CUDA:1 (NVIDIA GeForce RTX 4090, 24217MiB)
+⚠️ 检测到显存不足，正在第 5 次自动调整参数后重试...
+  -> 将训练分辨率从 768 调整为 640
+New https://pypi.org/project/ultralytics/8.3.203 available 😃 Update with 'pip install -U ultralytics'
+Ultralytics 8.3.201 🚀 Python-3.8.20 torch-2.0.1+cu117 CUDA:1 (NVIDIA GeForce RTX 4090, 24217MiB)
+⚠️ 检测到显存不足，正在第 6 次自动调整参数后重试...
+Traceback (most recent call last):
+  File "yolov8_train_env.py", line 58, in safe_train
+    return trainer.train(**params)
+  File "yolov8_train_env.py", line 226, in train
+    return self.model.train(**kwargs)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/engine/model.py", line 795, in train
+    self.trainer = (trainer or self._smart_load("trainer"))(overrides=args, _callbacks=self.callbacks)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/models/yolo/detect/train.py", line 65, in __init__
+    super().__init__(cfg, overrides, _callbacks)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/engine/trainer.py", line 132, in __init__
+    init_seeds(self.args.seed + 1 + RANK, deterministic=self.args.deterministic)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/ultralytics/utils/torch_utils.py", line 625, in init_seeds
+    torch.manual_seed(seed)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/torch/random.py", line 40, in manual_seed
+    torch.cuda.manual_seed_all(seed)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/torch/cuda/random.py", line 113, in manual_seed_all
+    _lazy_call(cb, seed_all=True)
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/torch/cuda/__init__.py", line 183, in _lazy_call
+    callable()
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/torch/cuda/random.py", line 111, in cb
+    default_generator.manual_seed(seed)
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "yolov8_train_env.py", line 278, in <module>
+    results = safe_train(trainer, training_params)
+  File "yolov8_train_env.py", line 89, in safe_train
+    raise RuntimeError("多次调参后显存仍不足，请手动检查其他占用或减小模型规模。") from err
+RuntimeError: 多次调参后显存仍不足，请手动检查其他占用或减小模型规模。
