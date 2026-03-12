@@ -1,0 +1,12 @@
+path: /data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/datasets/icdas_yolo_icdas4
+
+train: train/images
+val:   val/images
+test:  test/images
+
+nc: 4
+names:
+  0: ICDAS0
+  1: ICDAS_A
+  2: ICDAS_B
+  3: ICDAS_C
