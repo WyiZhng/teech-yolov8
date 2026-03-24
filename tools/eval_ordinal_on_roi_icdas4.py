@@ -1,8 +1,16 @@
 # tools/eval_ordinal_on_roi_icdas4.py
-import os, argparse, numpy as np, pandas as pd, torch
+import os, sys, argparse, numpy as np, pandas as pd, torch
+import torch.nn as nn
 from PIL import Image
 from torchvision import transforms, models
 from sklearn.metrics import roc_auc_score, cohen_kappa_score, confusion_matrix
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(THIS_DIR)
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from ord2seq_head import Ord2SeqOrdinalHead
 
 def norm_id(s): return os.path.basename(str(s)).strip()
 
@@ -15,6 +23,50 @@ class OrdinalHead(torch.nn.Module):
         self.backbone = m
         self.head = torch.nn.Linear(feat, out_dims)
     def forward(self, x): return self.head(self.backbone(x))
+
+
+class SoftmaxHead4(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        m = models.resnet18(weights=None)
+        feat = m.fc.in_features
+        self.backbone = nn.Sequential(*list(m.children())[:-1])
+        self.fc = torch.nn.Linear(feat, 4)
+
+    def forward(self, x):
+        feat = self.backbone(x)
+        feat = feat.flatten(1)
+        return self.fc(feat)
+
+
+class ResNet18Ord2Seq4(torch.nn.Module):
+    def __init__(self, d_model=256, num_layers=2, backbone_style='resnet'):
+        super().__init__()
+        m = models.resnet18(weights=None)
+        feat = m.fc.in_features
+        self.backbone_style = backbone_style
+        if backbone_style == 'sequential':
+            self.backbone = nn.Sequential(*list(m.children())[:-1])
+        else:
+            m.fc = torch.nn.Identity()
+            self.backbone = m
+        # Keep the same attribute name as training scripts for seamless state_dict loading.
+        self.ord_head = Ord2SeqOrdinalHead(
+            in_features=feat,
+            num_classes=4,
+            d_model=d_model,
+            nhead=8,
+            num_decoder_layers=num_layers,
+            dim_feedforward=d_model * 4,
+            dropout=0.1,
+            use_masked_decision=True,
+        )
+
+    def forward(self, x):
+        feat = self.backbone(x)
+        if self.backbone_style == 'sequential':
+            feat = feat.flatten(1)
+        return self.ord_head(feat)
 
 def map_ic4(icdas):
     if icdas <= 0: return 0
@@ -31,15 +83,79 @@ def main(a):
     df['image_id'] = df['image_id'].astype(str).apply(norm_id)
     df['ic4'] = df['icdas'].apply(map_ic4)
 
-    # 模型：根据 ckpt 自动推断输出维度（3: ge1/ge3/ge5；6: ge1..ge6）
+    # 模型：自动识别 masked-ordinal / softmax4 / ord2seq。
     sd = torch.load(a.ckpt, map_location=device)
-    if 'head.weight' in sd:
-        out_dims = sd['head.weight'].shape[0]
+    is_ord2seq = any(
+        k.startswith('head.step_classifiers')
+        or 'head.path_tokens' in k
+        or k.startswith('ord_head.step_classifiers')
+        or 'ord_head.path_tokens' in k
+        for k in sd.keys()
+    )
+    is_softmax4 = ('fc.weight' in sd and tuple(sd['fc.weight'].shape) == (4, 512))
+
+    ckpt_type = 'ord2seq' if is_ord2seq else ('softmax4' if is_softmax4 else 'masked')
+
+    if ckpt_type == 'ord2seq':
+        if 'ord_head.feature_proj.weight' in sd:
+            d_model = int(sd['ord_head.feature_proj.weight'].shape[0])
+        elif 'head.feature_proj.weight' in sd:
+            d_model = int(sd['head.feature_proj.weight'].shape[0])
+        else:
+            d_model = 256
+        # Infer decoder layers from state dict.
+        layer_ids = set()
+        for k in sd.keys():
+            p1 = 'ord_head.decoder.layers.'
+            p2 = 'head.decoder.layers.'
+            if p1 in k:
+                tail = k.split(p1, 1)[1]
+            elif p2 in k:
+                tail = k.split(p2, 1)[1]
+            else:
+                tail = None
+            if tail is not None:
+                idx = tail.split('.', 1)[0]
+                if idx.isdigit():
+                    layer_ids.add(int(idx))
+        num_layers = (max(layer_ids) + 1) if layer_ids else 2
+        # Auto-detect backbone state_dict layout:
+        # - train_softmax_head_icdas4.py stores sequential keys like backbone.0.weight
+        # - train_ordinal_head_min.py (masked branch) style would be backbone.conv1.weight
+        if any(k.startswith('backbone.0.') for k in sd.keys()):
+            bb_style = 'sequential'
+        else:
+            bb_style = 'resnet'
+        model = ResNet18Ord2Seq4(d_model=d_model, num_layers=num_layers, backbone_style=bb_style).to(device)
+    elif ckpt_type == 'softmax4':
+        model = SoftmaxHead4().to(device)
     else:
-        out_dims = 6
-    model = OrdinalHead(out_dims=out_dims).to(device)
-    model.load_state_dict(sd, strict=False)
+        out_dims = sd['head.weight'].shape[0] if 'head.weight' in sd else 6
+        model = OrdinalHead(out_dims=out_dims).to(device)
+
+    missing, unexpected = model.load_state_dict(sd, strict=False)
     model.eval()
+
+    print(f"Detected checkpoint type: {ckpt_type}")
+    critical_missing = []
+    if ckpt_type == 'ord2seq':
+        if any('ord_head.' in k for k in model.state_dict().keys()):
+            critical_missing = [k for k in missing if k.startswith('ord_head.')]
+        else:
+            critical_missing = [k for k in missing if k.startswith('head.')]
+    elif ckpt_type == 'softmax4':
+        critical_missing = [k for k in missing if k.startswith('fc.')]
+    else:
+        critical_missing = [k for k in missing if k.startswith('head.')]
+
+    if critical_missing:
+        raise SystemExit(
+            f"Checkpoint and model head mismatch. Missing critical keys: {critical_missing[:5]}"
+        )
+    if unexpected:
+        print(f"Note: unexpected keys ignored: {len(unexpected)}")
+    if missing:
+        print(f"Note: missing keys ignored: {len(missing)}")
 
     tx = transforms.Compose([
         transforms.Resize((a.img_size, a.img_size)),
@@ -67,13 +183,25 @@ def main(a):
             metas.append(i)
             if len(batch)==a.bs or i==len(df)-1:
                 x = torch.stack(batch).to(device)
-                z = model(x)
-                p = torch.sigmoid(z).cpu().numpy()
-                # 兼容 3/6 维输出
-                if p.shape[1] == 3:
-                    ge1, ge3, ge5 = p[:,0], p[:,1], p[:,2]
+                out = model(x)
+                if ckpt_type == 'ord2seq':
+                    probs = out['prob'].cpu().numpy()  # [B,4]
+                    ge1 = 1.0 - probs[:, 0]
+                    ge3 = probs[:, 2] + probs[:, 3]
+                    ge5 = probs[:, 3]
+                elif ckpt_type == 'softmax4':
+                    probs = torch.softmax(out, dim=1).cpu().numpy()  # [B,4]
+                    ge1 = 1.0 - probs[:, 0]
+                    ge3 = probs[:, 2] + probs[:, 3]
+                    ge5 = probs[:, 3]
                 else:
-                    ge1, ge3, ge5 = p[:,0], p[:,2], p[:,4]
+                    z = out
+                    p = torch.sigmoid(z).cpu().numpy()
+                    # 兼容 3/6 维输出
+                    if p.shape[1] == 3:
+                        ge1, ge3, ge5 = p[:,0], p[:,1], p[:,2]
+                    else:
+                        ge1, ge3, ge5 = p[:,0], p[:,2], p[:,4]
                 ps_ge1.extend(ge1.tolist()); ps_ge3.extend(ge3.tolist()); ps_ge5.extend(ge5.tolist())
                 batch, metas = [], []
 

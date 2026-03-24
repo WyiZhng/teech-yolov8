@@ -5,6 +5,17 @@ from PIL import Image
 import torch, torch.nn as nn, torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, models
+from ord2seq_head import Ord2SeqOrdinalHead
+
+
+def map_ic4(icdas):
+    if icdas <= 0:
+        return 0
+    if icdas <= 2:
+        return 1
+    if icdas <= 4:
+        return 2
+    return 3
 
 class Icdas4RoiDataset(Dataset):
     def __init__(self, csv_path, img_root, img_size=256, expand=1.15, augment=True):
@@ -39,22 +50,42 @@ class Icdas4RoiDataset(Dataset):
             crop = transforms.functional.hflip(crop)
         img = self.tx(crop)
         
-        # 标签：优先用 ic4 (0-3)，没有则用 icdas (0-6)
-        y4 = int(r['ic4']) if 'ic4' in r else int(r['icdas'])
+        # 标签：优先用 ic4 (0-3)；若只有 icdas(0-6) 则映射到 4 类
+        if 'ic4' in r:
+            y4 = int(r['ic4'])
+        else:
+            y4 = map_ic4(int(r['icdas']))
         return img, y4
 
-class ResNet18Softmax4(nn.Module):
-    def __init__(self, pretrained=True):
+
+class ResNet18Icdas4(nn.Module):
+    def __init__(self, pretrained=True, head_type='softmax', ord2seq_d_model=256, ord2seq_layers=2):
         super().__init__()
         m = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1 if pretrained else None)
         self.backbone = nn.Sequential(*list(m.children())[:-1])  # 去掉原 fc
-        self.fc = nn.Linear(m.fc.in_features, 4)
+        self.head_type = head_type
+        if self.head_type == 'softmax':
+            self.fc = nn.Linear(m.fc.in_features, 4)
+        elif self.head_type == 'ord2seq':
+            self.ord_head = Ord2SeqOrdinalHead(
+                in_features=m.fc.in_features,
+                num_classes=4,
+                d_model=ord2seq_d_model,
+                nhead=8,
+                num_decoder_layers=ord2seq_layers,
+                dim_feedforward=ord2seq_d_model * 4,
+                dropout=0.1,
+                use_masked_decision=True,
+            )
+        else:
+            raise ValueError(f'Unknown head_type: {self.head_type}')
 
-    def forward(self, x):
+    def forward(self, x, labels=None):
         feat = self.backbone(x)   # [B,512,1,1]
         feat = feat.flatten(1)    # [B,512]
-        logits = self.fc(feat)    # [B,4]
-        return logits
+        if self.head_type == 'softmax':
+            return {'logits': self.fc(feat)}
+        return self.ord_head(feat, labels=labels)
 
 def main(a):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -65,7 +96,12 @@ def main(a):
     tr_loader = DataLoader(tr_ds, batch_size=a.bs, shuffle=True,  num_workers=4, pin_memory=True)
     va_loader = DataLoader(va_ds, batch_size=a.bs, shuffle=False, num_workers=4, pin_memory=True)
 
-    model = ResNet18Softmax4(pretrained=True).to(device)
+    model = ResNet18Icdas4(
+        pretrained=True,
+        head_type=a.head_type,
+        ord2seq_d_model=a.ord2seq_d_model,
+        ord2seq_layers=a.ord2seq_layers,
+    ).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=a.lr)
     criterion = nn.CrossEntropyLoss()
 
@@ -75,8 +111,12 @@ def main(a):
         for imgs, labels in tr_loader:
             imgs = imgs.to(device)
             labels = labels.to(device)
-            logits = model(imgs)          # [B,4]
-            loss = criterion(logits, labels)
+            out = model(imgs, labels=labels if a.head_type == 'ord2seq' else None)
+            if a.head_type == 'softmax':
+                logits = out['logits']
+                loss = criterion(logits, labels)
+            else:
+                loss = out['loss']
 
             opt.zero_grad()
             loss.backward()
@@ -92,8 +132,11 @@ def main(a):
             for imgs, labels in va_loader:
                 imgs = imgs.to(device)
                 labels = labels.to(device)
-                logits = model(imgs)
-                pred = logits.argmax(dim=1)
+                out = model(imgs)
+                if a.head_type == 'softmax':
+                    pred = out['logits'].argmax(dim=1)
+                else:
+                    pred = out['pred']
                 correct += (pred == labels).sum().item()
                 tot += labels.numel()
         print(f'  Val Acc={correct/tot:.3f}')
@@ -112,5 +155,8 @@ if __name__ == '__main__':
     parser.add_argument('--epochs',   type=int, default=60)
     parser.add_argument('--lr',       type=float, default=3e-4)
     parser.add_argument('--out',      type=str, default='softmax_head_icdas4.pt')
+    parser.add_argument('--head_type', type=str, default='softmax', choices=['softmax', 'ord2seq'])
+    parser.add_argument('--ord2seq_d_model', type=int, default=256)
+    parser.add_argument('--ord2seq_layers', type=int, default=2)
     a = parser.parse_args()
     main(a)
