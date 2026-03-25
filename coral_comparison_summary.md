@@ -15,6 +15,13 @@
 - New evaluation entry:
   - `eval_coral_on_roi_icdas4.py`
 
+Additional strict-paper CORAL version (shared-weight + threshold-bias):
+
+- New strict training entry:
+  - `train_coral_strict_head_icdas4.py`
+- New strict evaluation entry:
+  - `eval_coral_strict_on_roi_icdas4.py`
+
 No existing training/evaluation scripts were modified.
 
 ## Existing Methods Identified in Repo
@@ -38,6 +45,14 @@ No existing training/evaluation scripts were modified.
   - `3 -> [1,1,1]`
 - Decoding:
   - `pred_class = sum(sigmoid(logits) > 0.5)`
+
+Strict CORAL variant in this repo:
+
+- `train_coral_strict_head_icdas4.py` uses a CORALLayer with:
+  - shared weight: one linear projection to scalar logit
+  - threshold-specific biases: 3 learnable bias terms for ICDAS4
+- Formula: `logits_k = w^T x + b_k`, `k in {1,2,3}`
+- This is the strict architecture style referred by CORAL paper implementations.
 
 ## Training Command (CORAL)
 
@@ -77,6 +92,37 @@ python eval_coral_on_roi_icdas4.py \
   --out_test_csv roi_test_icdas4_coral.csv
 ```
 
+## Training Command (Strict CORAL)
+
+```bash
+python train_coral_strict_head_icdas4.py \
+  --train_csv icdas4_train.csv \
+  --val_csv icdas4_val.csv \
+  --img_root_train <train_image_root> \
+  --img_root_val <val_image_root> \
+  --img_size 256 \
+  --expand 1.25 \
+  --bs 64 \
+  --epochs 60 \
+  --lr 3e-4 \
+  --out coral_strict_head_icdas4.pt
+```
+
+## Evaluation Command (Strict CORAL)
+
+```bash
+python eval_coral_strict_on_roi_icdas4.py \
+  --val_csv icdas4_val.csv \
+  --test_csv icdas4_test.csv \
+  --img_root <shared_or_split_specific_image_root> \
+  --ckpt coral_strict_head_icdas4.pt \
+  --img_size 256 \
+  --expand 1.25 \
+  --bs 128 \
+  --out_val_csv roi_val_icdas4_coral_strict.csv \
+  --out_test_csv roi_test_icdas4_coral_strict.csv
+```
+
 Evaluation prints:
 
 - `AUC(>=1)`
@@ -93,6 +139,8 @@ Evaluation prints:
 - Prediction CSVs:
   - `roi_val_icdas4_coral.csv`
   - `roi_test_icdas4_coral.csv`
+  - `roi_val_icdas4_coral_strict.csv`
+  - `roi_test_icdas4_coral_strict.csv`
 
 Each CSV contains at least:
 
@@ -106,15 +154,52 @@ Each CSV contains at least:
 
 ## Comparison Protocol
 
-Run three heads under matched settings:
+Run five heads under matched settings:
 
 1. Softmax head
-2. Existing ordinal head
-3. CORAL head
+2. Your own ordinal head (masked)
+3. Existing Ord2Seq ordinal head
+4. CORAL head
+5. Strict CORAL head
 
 Then compare on the same val/test CSVs with MAE, QWK, AUC(>=1/3/5), and confusion matrix.
 
 ## Current Status
 
 - CORAL scripts are integrated and runnable.
-- Full metric table is pending training/evaluation runs in your target environment.
+- Latest val/test comparison table has been filled from completed runs.
+
+## Latest Run Results (Same ROI Protocol)
+
+Validation split (`icdas4_val.csv`):
+
+| Method | AUC(>=1) | AUC(>=3) | AUC(>=5) | MAE | QWK |
+|---|---:|---:|---:|---:|---:|
+| Softmax head (`softmax_head_icdas4.pt`) | 0.812 | 0.906 | 0.890 | 0.314 | 0.614 |
+| Your own Ordinal (masked, `ordinal_head_icdas4.pt`) | 0.794 | 0.940 | 0.960 | 0.356 | 0.544 |
+| Existing Ordinal (Ord2Seq, `ord2seq_head_icdas4.pt`) | 0.801 | 0.731 | 0.939 | 0.326 | 0.584 |
+| CORAL (independent 3-logit) | 0.783 | 0.915 | 0.974 | 0.365 | 0.566 |
+| CORAL strict (shared-weight + bias) | 0.822 | 0.897 | 0.945 | 0.410 | 0.573 |
+
+Test split (`icdas4_test.csv`):
+
+| Method | AUC(>=1) | AUC(>=3) | AUC(>=5) | MAE | QWK |
+|---|---:|---:|---:|---:|---:|
+| Softmax head (`softmax_head_icdas4.pt`) | 0.862 | 0.813 | 0.996 | 0.296 | 0.596 |
+| Your own Ordinal (masked, `ordinal_head_icdas4.pt`) | 0.837 | 0.849 | 0.994 | 0.349 | 0.496 |
+| Existing Ordinal (Ord2Seq, `ord2seq_head_icdas4.pt`) | 0.857 | 0.680 | 0.998 | 0.286 | 0.568 |
+| CORAL (independent 3-logit) | 0.855 | 0.828 | 0.998 | 0.298 | 0.567 |
+| CORAL strict (shared-weight + bias) | 0.869 | 0.852 | 0.992 | 0.481 | 0.459 |
+
+Generated CSV files from this run:
+
+- `roi_val_icdas4_softmax_head_icdas4.csv`
+- `roi_test_icdas4_softmax_head_icdas4.csv`
+- `roi_val_icdas4_ordinal_head_icdas4.csv`
+- `roi_test_icdas4_ordinal_head_icdas4.csv`
+- `roi_val_icdas4_ord2seq_head_icdas4.csv`
+- `roi_test_icdas4_ord2seq_head_icdas4.csv`
+- `roi_val_icdas4_coral.csv`
+- `roi_test_icdas4_coral.csv`
+- `roi_val_icdas4_coral_strict.csv`
+- `roi_test_icdas4_coral_strict.csv`

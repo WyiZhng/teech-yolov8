@@ -77,17 +77,29 @@ class Icdas4RoiDataset(Dataset):
         return crop, y4, i
 
 
-class ResNet18Coral(nn.Module):
+class CORALLayer(nn.Module):
+    def __init__(self, in_features, num_classes=4):
+        super().__init__()
+        self.coral_weight = nn.Linear(in_features, 1, bias=False)
+        init_bias = torch.arange(num_classes - 1, 0, -1, dtype=torch.float32)
+        self.coral_bias = nn.Parameter(init_bias)
+
+    def forward(self, x):
+        shared_logit = self.coral_weight(x)
+        return shared_logit + self.coral_bias
+
+
+class ResNet18CoralStrict(nn.Module):
     def __init__(self, num_classes=4):
         super().__init__()
         m = models.resnet18(weights=None)
         self.backbone = nn.Sequential(*list(m.children())[:-1])
-        self.fc = nn.Linear(m.fc.in_features, num_classes - 1)
+        self.coral = CORALLayer(in_features=m.fc.in_features, num_classes=num_classes)
 
     def forward(self, x):
         feat = self.backbone(x)
         feat = feat.flatten(1)
-        return self.fc(feat)
+        return self.coral(feat)
 
 
 def safe_auc(y_true, scores):
@@ -104,7 +116,7 @@ def evaluate_split(csv_path, img_root, ckpt, out_csv, img_size=256, expand=1.25,
     ds = Icdas4RoiDataset(csv_path, img_root, img_size=img_size, expand=expand, augment=False)
     loader = DataLoader(ds, batch_size=bs, shuffle=False, num_workers=4, pin_memory=True)
 
-    model = ResNet18Coral(num_classes=4).to(device)
+    model = ResNet18CoralStrict(num_classes=4).to(device)
     state = torch.load(ckpt, map_location=device)
     model.load_state_dict(state)
     model.eval()
@@ -160,14 +172,6 @@ def evaluate_split(csv_path, img_root, ckpt, out_csv, img_size=256, expand=1.25,
     print(cm)
     print(f"Saved per-ROI predictions to: {out_csv}")
 
-    return {
-        "auc_ge1": auc_ge1,
-        "auc_ge3": auc_ge3,
-        "auc_ge5": auc_ge5,
-        "mae": mae,
-        "qwk": qwk,
-    }
-
 
 def main(a):
     root_val = a.img_root_val if a.img_root_val else a.img_root
@@ -207,11 +211,11 @@ if __name__ == "__main__":
     ap.add_argument("--img_root", type=str, default="")
     ap.add_argument("--img_root_val", type=str, default="")
     ap.add_argument("--img_root_test", type=str, default="")
-    ap.add_argument("--ckpt", type=str, default="coral_head_icdas4.pt")
+    ap.add_argument("--ckpt", type=str, default="coral_strict_head_icdas4.pt")
     ap.add_argument("--img_size", type=int, default=256)
     ap.add_argument("--expand", type=float, default=1.25)
     ap.add_argument("--bs", type=int, default=128)
-    ap.add_argument("--out_val_csv", type=str, default="roi_val_icdas4_coral.csv")
-    ap.add_argument("--out_test_csv", type=str, default="roi_test_icdas4_coral.csv")
+    ap.add_argument("--out_val_csv", type=str, default="roi_val_icdas4_coral_strict.csv")
+    ap.add_argument("--out_test_csv", type=str, default="roi_test_icdas4_coral_strict.csv")
     args = ap.parse_args()
     main(args)
