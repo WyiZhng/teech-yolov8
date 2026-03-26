@@ -328,3 +328,36 @@ Pareto exports:
 - `out_csv/threshold_tuning/coral_pareto.json`
 - `out_csv/threshold_tuning/coral_strict_pareto.json`
 - `out_csv/threshold_tuning/dch_ordinal_pareto.json`
+
+## DCH Ablation: Remove `L_mono`
+
+Setup:
+
+- Keep all hyper-parameters unchanged except `lambda_mono=0.0`.
+- Train command uses the same DCH config as baseline.
+- Evaluate both checkpoints with the same eval script and same `alpha=0.7`.
+
+Checkpoints:
+
+- With `L_mono`: `dch_ordinal_head_icdas4.pt`
+- Without `L_mono`: `dch_ordinal_head_icdas4_no_mono.pt`
+
+Evaluation outputs:
+
+- with mono: `roi_val_icdas4_dch_ordinal_with_mono_reval.csv`, `roi_test_icdas4_dch_ordinal_with_mono_reval.csv`
+- no mono: `roi_val_icdas4_dch_ordinal_no_mono.csv`, `roi_test_icdas4_dch_ordinal_no_mono.csv`
+
+### Val/Test comparison
+
+| Split | Variant | AUC(>=1) | AUC(>=3) | AUC(>=5) | MAE | QWK |
+|---|---|---:|---:|---:|---:|---:|
+| Val | DCH + `L_mono` | 0.808 | 0.912 | 0.942 | 0.336 | 0.596 |
+| Val | DCH - `L_mono` | 0.787 | 0.926 | 0.982 | 0.368 | 0.605 |
+| Test | DCH + `L_mono` | 0.862 | 0.875 | 0.996 | 0.374 | 0.512 |
+| Test | DCH - `L_mono` | 0.858 | 0.812 | 0.958 | 0.359 | 0.535 |
+
+Observed effect:
+
+- On test, removing `L_mono` improves MAE (`0.374 -> 0.359`) and QWK (`0.512 -> 0.535`).
+- On val, removing `L_mono` worsens MAE (`0.336 -> 0.368`) but slightly improves QWK (`0.596 -> 0.605`).
+- This indicates `L_mono` may not be universally beneficial in current setting and can be treated as a tunable/optional regularizer.
