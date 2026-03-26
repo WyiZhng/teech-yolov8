@@ -1,0 +1,39 @@
+{
+  "name": "coral_strict",
+  "objective": "qwk",
+  "best_thresholds": {
+    "t1": 0.38,
+    "t3": 0.4600000000000001,
+    "t5": 0.3400000000000001
+  },
+  "base_val": {
+    "qwk": 0.5727699530516432,
+    "mae": 0.40987654320987654,
+    "auc_ge1": 0.8221561753797693,
+    "auc_ge3": 0.8966728811128639,
+    "auc_ge5": 0.9450056116722785
+  },
+  "tuned_val": {
+    "qwk": 0.660166083157316,
+    "mae": 0.32839506172839505,
+    "auc_ge1": 0.8221561753797693,
+    "auc_ge3": 0.8966728811128639,
+    "auc_ge5": 0.9450056116722785
+  },
+  "base_test": {
+    "qwk": 0.45925012878063143,
+    "mae": 0.4810924369747899,
+    "auc_ge1": 0.8692502400279306,
+    "auc_ge3": 0.8516426282051281,
+    "auc_ge5": 0.991578947368421
+  },
+  "tuned_test": {
+    "qwk": 0.5518415741675076,
+    "mae": 0.4012605042016807,
+    "auc_ge1": 0.8692502400279306,
+    "auc_ge3": 0.8516426282051281,
+    "auc_ge5": 0.991578947368421
+  },
+  "out_val_csv": "out_csv/threshold_tuning/roi_val_icdas4_coral_strict_tuned.csv",
+  "out_test_csv": "out_csv/threshold_tuning/roi_test_icdas4_coral_strict_tuned.csv"
+}

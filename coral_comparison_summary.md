@@ -154,13 +154,14 @@ Each CSV contains at least:
 
 ## Comparison Protocol
 
-Run five heads under matched settings:
+Run six heads under matched settings:
 
 1. Softmax head
 2. Your own ordinal head (masked)
 3. Existing Ord2Seq ordinal head
 4. CORAL head
 5. Strict CORAL head
+6. DCH-Ordinal head
 
 Then compare on the same val/test CSVs with MAE, QWK, AUC(>=1/3/5), and confusion matrix.
 
@@ -180,6 +181,7 @@ Validation split (`icdas4_val.csv`):
 | Existing Ordinal (Ord2Seq, `ord2seq_head_icdas4.pt`) | 0.801 | 0.731 | 0.939 | 0.326 | 0.584 |
 | CORAL (independent 3-logit) | 0.783 | 0.915 | 0.974 | 0.365 | 0.566 |
 | CORAL strict (shared-weight + bias) | 0.822 | 0.897 | 0.945 | 0.410 | 0.573 |
+| DCH-Ordinal (hybrid) | 0.808 | 0.912 | 0.942 | 0.336 | 0.596 |
 
 Test split (`icdas4_test.csv`):
 
@@ -190,6 +192,7 @@ Test split (`icdas4_test.csv`):
 | Existing Ordinal (Ord2Seq, `ord2seq_head_icdas4.pt`) | 0.857 | 0.680 | 0.998 | 0.286 | 0.568 |
 | CORAL (independent 3-logit) | 0.855 | 0.828 | 0.998 | 0.298 | 0.567 |
 | CORAL strict (shared-weight + bias) | 0.869 | 0.852 | 0.992 | 0.481 | 0.459 |
+| DCH-Ordinal (hybrid) | 0.862 | 0.875 | 0.996 | 0.374 | 0.512 |
 
 Generated CSV files from this run:
 
@@ -203,3 +206,63 @@ Generated CSV files from this run:
 - `roi_test_icdas4_coral.csv`
 - `roi_val_icdas4_coral_strict.csv`
 - `roi_test_icdas4_coral_strict.csv`
+- `roi_val_icdas4_dch_ordinal.csv`
+- `roi_test_icdas4_dch_ordinal.csv`
+
+## Threshold Optimization (Val-Tuned, Test-Applied)
+
+To address the mismatch where AUC can improve while MAE/QWK degrades, we did post-hoc threshold tuning on val only:
+
+- Keep model weights fixed.
+- Grid-search `(t1, t3, t5)` on val with objective `QWK`.
+- Apply the selected thresholds to both val and test for reporting.
+
+Command utility:
+
+```bash
+python tools/optimize_icdas4_thresholds_from_roi.py
+```
+
+### Best thresholds from validation
+
+| Method | Best `(t1,t3,t5)` |
+|---|---|
+| Softmax | (0.34, 0.30, 0.18) |
+| Your own Ordinal (masked) | (0.78, 0.12, 0.10) |
+| Existing Ordinal (Ord2Seq) | (0.62, 0.10, 0.10) |
+| CORAL | (0.32, 0.26, 0.10) |
+| CORAL strict | (0.38, 0.46, 0.34) |
+| DCH-Ordinal | (0.38, 0.34, 0.26) |
+
+### QWK/MAE before vs after tuning
+
+Validation split (`icdas4_val.csv`):
+
+| Method | Base QWK | Tuned QWK | Base MAE | Tuned MAE |
+|---|---:|---:|---:|---:|
+| Softmax | 0.614 | 0.649 | 0.314 | 0.296 |
+| Your own Ordinal (masked) | 0.544 | 0.603 | 0.356 | 0.378 |
+| Existing Ordinal (Ord2Seq) | 0.584 | 0.592 | 0.326 | 0.321 |
+| CORAL | 0.566 | 0.611 | 0.365 | 0.351 |
+| CORAL strict | 0.573 | 0.660 | 0.410 | 0.328 |
+| DCH-Ordinal | 0.596 | 0.647 | 0.336 | 0.331 |
+
+Test split (`icdas4_test.csv`):
+
+| Method | Base QWK | Tuned QWK | Base MAE | Tuned MAE |
+|---|---:|---:|---:|---:|
+| Softmax | 0.596 | 0.591 | 0.296 | 0.303 |
+| Your own Ordinal (masked) | 0.496 | 0.528 | 0.349 | 0.408 |
+| Existing Ordinal (Ord2Seq) | 0.568 | 0.562 | 0.286 | 0.288 |
+| CORAL | 0.567 | 0.552 | 0.298 | 0.324 |
+| CORAL strict | 0.459 | 0.552 | 0.481 | 0.401 |
+| DCH-Ordinal | 0.512 | 0.613 | 0.374 | 0.349 |
+
+JSON summaries:
+
+- `out_csv/threshold_tuning/softmax_tuning_qwk.json`
+- `out_csv/threshold_tuning/masked_ordinal_tuning_qwk.json`
+- `out_csv/threshold_tuning/ord2seq_tuning_qwk.json`
+- `out_csv/threshold_tuning/coral_tuning_qwk.json`
+- `out_csv/threshold_tuning/coral_strict_tuning_qwk.json`
+- `out_csv/threshold_tuning/dch_ordinal_tuning_qwk.json`
