@@ -57,10 +57,65 @@ def evaluate(y, p1, p3, p5, t1, t3, t5):
     }
 
 
-def grid_search(y, p1, p3, p5, start=0.1, end=0.9, step=0.02, objective="qwk"):
+def _is_better(cand, best, objective="qwk", lambda_mae=0.30):
+    if objective == "mae":
+        # primary lower MAE, tie-break higher QWK
+        return (cand["mae"] < best["mae"]) or (
+            abs(cand["mae"] - best["mae"]) < 1e-12 and cand["qwk"] > best["qwk"]
+        )
+
+    if objective == "qwk_mae":
+        # maximize (QWK - lambda * MAE), tie-break higher QWK then lower MAE
+        s_c = cand["qwk"] - lambda_mae * cand["mae"]
+        s_b = best["qwk"] - lambda_mae * best["mae"]
+        return (s_c > s_b) or (
+            abs(s_c - s_b) < 1e-12
+            and (
+                (cand["qwk"] > best["qwk"])
+                or (abs(cand["qwk"] - best["qwk"]) < 1e-12 and cand["mae"] < best["mae"])
+            )
+        )
+
+    # default qwk: primary higher QWK, tie-break lower MAE
+    return (cand["qwk"] > best["qwk"]) or (
+        abs(cand["qwk"] - best["qwk"]) < 1e-12 and cand["mae"] < best["mae"]
+    )
+
+
+def _pareto_front(cands):
+    # non-dominated set: maximize qwk, minimize mae
+    front = []
+    for i, a in enumerate(cands):
+        dominated = False
+        for j, b in enumerate(cands):
+            if i == j:
+                continue
+            b_not_worse = (b["qwk"] >= a["qwk"]) and (b["mae"] <= a["mae"])
+            b_strict_better = (b["qwk"] > a["qwk"]) or (b["mae"] < a["mae"])
+            if b_not_worse and b_strict_better:
+                dominated = True
+                break
+        if not dominated:
+            front.append(a)
+    front.sort(key=lambda x: (-x["qwk"], x["mae"]))
+    return front
+
+
+def grid_search(
+    y,
+    p1,
+    p3,
+    p5,
+    start=0.1,
+    end=0.9,
+    step=0.02,
+    objective="qwk",
+    lambda_mae=0.30,
+):
     grid = np.arange(start, end + 1e-9, step)
 
     best = None
+    all_cands = []
     for t1 in grid:
         for t3 in grid:
             for t5 in grid:
@@ -72,22 +127,14 @@ def grid_search(y, p1, p3, p5, start=0.1, end=0.9, step=0.02, objective="qwk"):
                     "qwk": out["qwk"],
                     "mae": out["mae"],
                 }
+                all_cands.append(cand)
                 if best is None:
                     best = cand
                     continue
-                if objective == "mae":
-                    # primary lower MAE, tie-break higher QWK
-                    better = (cand["mae"] < best["mae"]) or (
-                        abs(cand["mae"] - best["mae"]) < 1e-12 and cand["qwk"] > best["qwk"]
-                    )
-                else:
-                    # primary higher QWK, tie-break lower MAE
-                    better = (cand["qwk"] > best["qwk"]) or (
-                        abs(cand["qwk"] - best["qwk"]) < 1e-12 and cand["mae"] < best["mae"]
-                    )
+                better = _is_better(cand, best, objective=objective, lambda_mae=lambda_mae)
                 if better:
                     best = cand
-    return best
+    return best, all_cands
 
 
 def main(a):
@@ -100,7 +147,7 @@ def main(a):
     base_val = evaluate(yv, p1v, p3v, p5v, 0.5, 0.5, 0.5)
     base_test = evaluate(yt, p1t, p3t, p5t, 0.5, 0.5, 0.5)
 
-    best = grid_search(
+    best, all_cands = grid_search(
         yv,
         p1v,
         p3v,
@@ -109,7 +156,11 @@ def main(a):
         end=a.end,
         step=a.step,
         objective=a.objective,
+        lambda_mae=a.lambda_mae,
     )
+
+    front = _pareto_front(all_cands)
+    score = best["qwk"] - a.lambda_mae * best["mae"]
 
     tuned_val = evaluate(yv, p1v, p3v, p5v, best["t1"], best["t3"], best["t5"])
     tuned_test = evaluate(yt, p1t, p3t, p5t, best["t1"], best["t3"], best["t5"])
@@ -124,7 +175,11 @@ def main(a):
     summary = {
         "name": a.name,
         "objective": a.objective,
+        "lambda_mae": a.lambda_mae,
+        "selection_score_qwk_minus_lambda_mae": score,
         "best_thresholds": {"t1": best["t1"], "t3": best["t3"], "t5": best["t5"]},
+        "pareto_front_size": len(front),
+        "pareto_front_top": front[: a.pareto_topk],
         "base_val": {
             "qwk": base_val["qwk"],
             "mae": base_val["mae"],
@@ -157,15 +212,35 @@ def main(a):
         "out_test_csv": a.out_test_csv,
     }
 
+    if a.pareto_json:
+        os.makedirs(os.path.dirname(a.pareto_json) or ".", exist_ok=True)
+        with open(a.pareto_json, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "name": a.name,
+                    "objective": a.objective,
+                    "lambda_mae": a.lambda_mae,
+                    "pareto_front_size": len(front),
+                    "pareto_front": front,
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
     os.makedirs(os.path.dirname(a.summary_json) or ".", exist_ok=True)
     with open(a.summary_json, "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
 
-    print(f"[{a.name}] objective={a.objective}")
+    print(f"[{a.name}] objective={a.objective} lambda_mae={a.lambda_mae:.3f}")
     print(f"best thresholds: t1={best['t1']:.3f}, t3={best['t3']:.3f}, t5={best['t5']:.3f}")
+    print(f"selection score (qwk-lambda*mae): {score:.5f}")
+    print(f"pareto front size: {len(front)}")
     print(f"val  base qwk/mae: {base_val['qwk']:.3f}/{base_val['mae']:.3f} -> tuned: {tuned_val['qwk']:.3f}/{tuned_val['mae']:.3f}")
     print(f"test base qwk/mae: {base_test['qwk']:.3f}/{base_test['mae']:.3f} -> tuned: {tuned_test['qwk']:.3f}/{tuned_test['mae']:.3f}")
     print(f"summary: {a.summary_json}")
+    if a.pareto_json:
+        print(f"pareto: {a.pareto_json}")
 
 
 if __name__ == "__main__":
@@ -173,10 +248,13 @@ if __name__ == "__main__":
     ap.add_argument("--name", type=str, default="method")
     ap.add_argument("--val_csv", required=True)
     ap.add_argument("--test_csv", required=True)
-    ap.add_argument("--objective", type=str, default="qwk", choices=["qwk", "mae"])
+    ap.add_argument("--objective", type=str, default="qwk", choices=["qwk", "mae", "qwk_mae"])
+    ap.add_argument("--lambda_mae", type=float, default=0.30)
     ap.add_argument("--start", type=float, default=0.1)
     ap.add_argument("--end", type=float, default=0.9)
     ap.add_argument("--step", type=float, default=0.02)
+    ap.add_argument("--pareto_json", type=str, default="")
+    ap.add_argument("--pareto_topk", type=int, default=20)
     ap.add_argument("--out_val_csv", required=True)
     ap.add_argument("--out_test_csv", required=True)
     ap.add_argument("--summary_json", required=True)

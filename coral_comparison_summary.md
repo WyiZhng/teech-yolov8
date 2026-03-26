@@ -266,3 +266,65 @@ JSON summaries:
 - `out_csv/threshold_tuning/coral_tuning_qwk.json`
 - `out_csv/threshold_tuning/coral_strict_tuning_qwk.json`
 - `out_csv/threshold_tuning/dch_ordinal_tuning_qwk.json`
+
+## Threshold Optimization v2 (Joint Objective: QWK-MAE)
+
+To improve the trade-off between QWK and MAE, we added a joint objective on val:
+
+- objective: `qwk_mae`
+- selection score: `QWK - lambda_mae * MAE`
+- this run uses `lambda_mae=0.30`
+- Pareto front is exported for each method.
+
+### Best thresholds from validation (qwk_mae)
+
+| Method | Best `(t1,t3,t5)` |
+|---|---|
+| Softmax | (0.34, 0.30, 0.18) |
+| Your own Ordinal (masked) | (0.58, 0.12, 0.10) |
+| Existing Ordinal (Ord2Seq) | (0.62, 0.10, 0.10) |
+| CORAL | (0.32, 0.34, 0.10) |
+| CORAL strict | (0.32, 0.46, 0.80) |
+| DCH-Ordinal | (0.38, 0.42, 0.30) |
+
+### QWK/MAE before vs after tuning (qwk_mae)
+
+Validation split (`icdas4_val.csv`):
+
+| Method | Base QWK | Tuned QWK | Base MAE | Tuned MAE |
+|---|---:|---:|---:|---:|
+| Softmax | 0.614 | 0.649 | 0.314 | 0.296 |
+| Your own Ordinal (masked) | 0.544 | 0.599 | 0.356 | 0.358 |
+| Existing Ordinal (Ord2Seq) | 0.584 | 0.592 | 0.326 | 0.321 |
+| CORAL | 0.566 | 0.610 | 0.365 | 0.346 |
+| CORAL strict | 0.573 | 0.654 | 0.410 | 0.299 |
+| DCH-Ordinal | 0.596 | 0.645 | 0.336 | 0.314 |
+
+Test split (`icdas4_test.csv`):
+
+| Method | Base QWK | Tuned QWK | Base MAE | Tuned MAE |
+|---|---:|---:|---:|---:|
+| Softmax | 0.596 | 0.591 | 0.296 | 0.303 |
+| Your own Ordinal (masked) | 0.496 | 0.532 | 0.349 | 0.380 |
+| Existing Ordinal (Ord2Seq) | 0.568 | 0.562 | 0.286 | 0.288 |
+| CORAL | 0.567 | 0.538 | 0.298 | 0.326 |
+| CORAL strict | 0.459 | 0.568 | 0.481 | 0.332 |
+| DCH-Ordinal | 0.512 | 0.603 | 0.374 | 0.311 |
+
+JSON summaries (`qwk_mae`):
+
+- `out_csv/threshold_tuning/softmax_tuning_qwkmae.json`
+- `out_csv/threshold_tuning/masked_ordinal_tuning_qwkmae.json`
+- `out_csv/threshold_tuning/ord2seq_tuning_qwkmae.json`
+- `out_csv/threshold_tuning/coral_tuning_qwkmae.json`
+- `out_csv/threshold_tuning/coral_strict_tuning_qwkmae.json`
+- `out_csv/threshold_tuning/dch_ordinal_tuning_qwkmae.json`
+
+Pareto exports:
+
+- `out_csv/threshold_tuning/softmax_pareto.json`
+- `out_csv/threshold_tuning/masked_ordinal_pareto.json`
+- `out_csv/threshold_tuning/ord2seq_pareto.json`
+- `out_csv/threshold_tuning/coral_pareto.json`
+- `out_csv/threshold_tuning/coral_strict_pareto.json`
+- `out_csv/threshold_tuning/dch_ordinal_pareto.json`
