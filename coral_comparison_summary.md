@@ -438,3 +438,45 @@ Comparison to dynamic + `L_mono` (same default-threshold protocol):
 
 - Metrics are identical to the previously reported dynamic run.
 - In this setting, removing `L_mono` does not change MAE/QWK or AUC, suggesting the current dynamic-fusion setup is insensitive to this regularizer.
+
+## New Method: Ord2Seq-Guided Softmax OrdPlus (Default Threshold)
+
+Method idea (paper-style innovation on top of softmax):
+
+- Keep the same ResNet18 ROI backbone and 4-class softmax head.
+- Add an Ord2Seq ordinal branch as a structured ordinal teacher.
+- Fuse softmax and ordinal probabilities with learnable class-wise fusion weights.
+- Train with a joint objective: CE + Ord2Seq loss + EMD + soft-QWK surrogate + consistency + KL distillation.
+
+Fairness protocol used for this run:
+
+- Same split files: `icdas4_train.csv`, `icdas4_val.csv`, `icdas4_test.csv`.
+- Same ROI crop/resize/normalize pipeline and same image roots.
+- Same training budget (`epochs=60`, `img_size=256`, `expand=1.25`, `bs=64`, `lr=3e-4`).
+- Same evaluation style with fixed decode threshold (`t=0.5`), no threshold tuning.
+
+Checkpoint and outputs:
+
+- Checkpoint: `softmax_ordplus_o2s_icdas4.pt`
+- Val CSV: `roi_val_icdas4_softmax_ordplus_o2s.csv`
+- Test CSV: `roi_test_icdas4_softmax_ordplus_o2s.csv`
+
+Val/Test metrics:
+
+| Split | Method | AUC(>=1) | AUC(>=3) | AUC(>=5) | MAE | QWK |
+|---|---|---:|---:|---:|---:|---:|
+| Val | Softmax baseline | 0.812 | 0.906 | 0.890 | 0.314 | 0.614 |
+| Val | Ord2Seq-guided Softmax OrdPlus | 0.804 | 0.911 | 0.908 | 0.323 | 0.624 |
+| Test | Softmax baseline | 0.862 | 0.813 | 0.996 | 0.296 | 0.596 |
+| Test | Ord2Seq-guided Softmax OrdPlus | 0.884 | 0.876 | 0.996 | 0.296 | 0.619 |
+
+Interpretation:
+
+- On test, the new method improves QWK (`0.596 -> 0.619`) while keeping MAE unchanged (`0.296 -> 0.296`).
+- On val, QWK improves (`0.614 -> 0.624`) with a small MAE trade-off (`0.314 -> 0.323`).
+- This method is currently a strong QWK-oriented alternative to softmax under fixed-threshold evaluation.
+
+Paper comparison note:
+
+- Yes, this run is valid for direct fair comparison in the paper under the current protocol constraints (same data split, same preprocess, same backbone, same decode threshold, no proposal-stage change).
+- To make the claim more robust, report both default-threshold and tuned-threshold tables, and include multi-seed mean/std in the final paper table.
