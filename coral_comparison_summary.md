@@ -361,3 +361,80 @@ Observed effect:
 - On test, removing `L_mono` improves MAE (`0.374 -> 0.359`) and QWK (`0.512 -> 0.535`).
 - On val, removing `L_mono` worsens MAE (`0.336 -> 0.368`) but slightly improves QWK (`0.596 -> 0.605`).
 - This indicates `L_mono` may not be universally beneficial in current setting and can be treated as a tunable/optional regularizer.
+
+## Minimal Comparison: `fixed` vs `static` vs `dynamic` Fusion (Default Threshold)
+
+Protocol:
+
+- Same DCH backbone and losses (`lambda_ce=0.5`, `lambda_cons=0.2`, `lambda_mono=0.05`).
+- Only fusion strategy changes.
+- Default decode threshold kept unchanged (`0.5`), no post-hoc threshold tuning.
+
+Fusion variants:
+
+- `fixed`: global fixed `alpha=0.7`.
+- `static`: learn three global fusion weights (`alpha1, alpha3, alpha5`).
+- `dynamic`: learn sample-dependent fusion weights via a gate network.
+
+Checkpoints:
+
+- `fixed`: `dch_ordinal_head_icdas4.pt`
+- `static`: `dch_ordinal_head_icdas4_static.pt`
+- `dynamic`: `dch_ordinal_head_icdas4_dynamic.pt`
+
+Evaluation CSV outputs:
+
+- `fixed`: `roi_val_icdas4_dch_fixed_default.csv`, `roi_test_icdas4_dch_fixed_default.csv`
+- `static`: `roi_val_icdas4_dch_static_default.csv`, `roi_test_icdas4_dch_static_default.csv`
+- `dynamic`: `roi_val_icdas4_dch_dynamic_default.csv`, `roi_test_icdas4_dch_dynamic_default.csv`
+
+Validation split (`icdas4_val.csv`):
+
+| Variant | AUC(>=1) | AUC(>=3) | AUC(>=5) | MAE | QWK |
+|---|---:|---:|---:|---:|---:|
+| fixed (`alpha=0.7`) | 0.808 | 0.912 | 0.942 | 0.336 | 0.596 |
+| static (learned `alpha1/alpha3/alpha5`) | 0.826 | 0.925 | 0.985 | 0.373 | 0.601 |
+| dynamic (sample-wise gate) | 0.780 | 0.927 | 0.981 | 0.368 | 0.582 |
+
+Test split (`icdas4_test.csv`):
+
+| Variant | AUC(>=1) | AUC(>=3) | AUC(>=5) | MAE | QWK |
+|---|---:|---:|---:|---:|---:|
+| fixed (`alpha=0.7`) | 0.862 | 0.875 | 0.996 | 0.374 | 0.512 |
+| static (learned `alpha1/alpha3/alpha5`) | 0.860 | 0.850 | 0.941 | 0.389 | 0.532 |
+| dynamic (sample-wise gate) | 0.834 | 0.831 | 0.994 | 0.315 | 0.523 |
+
+Quick reading:
+
+- On test, `static` improves QWK over `fixed` (`0.532 vs 0.512`) but hurts MAE.
+- On test, `dynamic` gives the best MAE (`0.315`) and better QWK than `fixed` (`0.523 vs 0.512`).
+- This supports replacing hard-coded fusion with data-driven fusion when MAE/QWK trade-off is the target.
+
+## Follow-up: `dynamic` + No `L_mono` (Default Threshold)
+
+Protocol:
+
+- Keep `fusion_mode=dynamic` unchanged.
+- Set only `lambda_mono=0.0`; all other training/eval settings unchanged.
+- Use default decode threshold (`0.5`), no post-hoc threshold tuning.
+
+Checkpoint:
+
+- `dch_ordinal_head_icdas4_dynamic_no_mono.pt`
+
+Evaluation CSV outputs:
+
+- Val: `roi_val_icdas4_dch_dynamic_no_mono_default.csv`
+- Test: `roi_test_icdas4_dch_dynamic_no_mono_default.csv`
+
+Val/Test metrics:
+
+| Split | Variant | AUC(>=1) | AUC(>=3) | AUC(>=5) | MAE | QWK |
+|---|---|---:|---:|---:|---:|---:|
+| Val | dynamic + no `L_mono` | 0.780 | 0.927 | 0.981 | 0.368 | 0.582 |
+| Test | dynamic + no `L_mono` | 0.834 | 0.831 | 0.994 | 0.315 | 0.523 |
+
+Comparison to dynamic + `L_mono` (same default-threshold protocol):
+
+- Metrics are identical to the previously reported dynamic run.
+- In this setting, removing `L_mono` does not change MAE/QWK or AUC, suggesting the current dynamic-fusion setup is insensitive to this regularizer.

@@ -34,17 +34,44 @@ class CORALLayer(nn.Module):
 
 
 class ResNet18DCHOrdinal(nn.Module):
-    def __init__(self, num_classes=4):
+    def __init__(self, num_classes=4, fusion_mode="fixed", init_alpha=0.7):
         super().__init__()
         m = models.resnet18(weights=None)
         feat = m.fc.in_features
         self.backbone = nn.Sequential(*list(m.children())[:-1])
         self.coral = CORALLayer(feat, num_classes=num_classes)
         self.softmax = nn.Linear(feat, num_classes)
+        self.fusion_mode = fusion_mode
+
+        init_alpha = float(np.clip(init_alpha, 1e-4, 1.0 - 1e-4))
+        init_logit = float(np.log(init_alpha / (1.0 - init_alpha)))
+        if fusion_mode == "fixed":
+            self.register_buffer("alpha_fixed", torch.full((3,), init_alpha, dtype=torch.float32))
+        elif fusion_mode == "static":
+            self.fusion_logits = nn.Parameter(torch.full((3,), init_logit, dtype=torch.float32))
+        elif fusion_mode == "dynamic":
+            hidden = max(64, feat // 4)
+            self.gate = nn.Sequential(
+                nn.Linear(feat, hidden),
+                nn.ReLU(inplace=True),
+                nn.Linear(hidden, 3),
+            )
+        else:
+            raise ValueError(f"Unknown fusion_mode: {fusion_mode}")
 
     def forward(self, x):
         feat = self.backbone(x).flatten(1)
-        return self.coral(feat), self.softmax(feat)
+        return self.coral(feat), self.softmax(feat), feat
+
+    def fuse_probs(self, coral_probs, soft_cum, feat):
+        if self.fusion_mode == "fixed":
+            alpha = self.alpha_fixed.unsqueeze(0).expand_as(coral_probs)
+        elif self.fusion_mode == "static":
+            alpha = torch.sigmoid(self.fusion_logits).unsqueeze(0).expand_as(coral_probs)
+        else:
+            alpha = torch.sigmoid(self.gate(feat))
+        fused = alpha * coral_probs + (1.0 - alpha) * soft_cum
+        return fused, alpha
 
 
 class Icdas4RoiDataset(Dataset):
@@ -107,25 +134,38 @@ def safe_auc(y_true, score):
     return float("nan")
 
 
+def infer_fusion_mode(state_dict):
+    if any(k.startswith("gate.") for k in state_dict.keys()):
+        return "dynamic"
+    if "fusion_logits" in state_dict:
+        return "static"
+    return "fixed"
+
+
 def evaluate_split(csv_path, img_root, ckpt, out_csv, img_size=256, expand=1.25, bs=128, alpha=0.7):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     ds = Icdas4RoiDataset(csv_path, img_root, img_size=img_size, expand=expand)
     loader = DataLoader(ds, batch_size=bs, shuffle=False, num_workers=4, pin_memory=True)
 
-    model = ResNet18DCHOrdinal(num_classes=4).to(device)
-    model.load_state_dict(torch.load(ckpt, map_location=device))
+    state = torch.load(ckpt, map_location=device)
+    fusion_mode = infer_fusion_mode(state)
+    model = ResNet18DCHOrdinal(num_classes=4, fusion_mode=fusion_mode, init_alpha=alpha).to(device)
+    model.load_state_dict(state, strict=False)
     model.eval()
 
     probs_list, ys, idxs = [], [], []
     with torch.no_grad():
         for imgs, labels, row_ids in loader:
             imgs = imgs.to(device)
-            coral_logits, cls_logits = model(imgs)
+            coral_logits, cls_logits, feat = model(imgs)
 
             coral_probs = torch.sigmoid(coral_logits)
             soft_probs = torch.softmax(cls_logits, dim=1)
             soft_cum = torch.stack([1.0 - soft_probs[:, 0], soft_probs[:, 2] + soft_probs[:, 3], soft_probs[:, 3]], dim=1)
-            fused = alpha * coral_probs + (1.0 - alpha) * soft_cum
+            if model.fusion_mode == "fixed":
+                fused = alpha * coral_probs + (1.0 - alpha) * soft_cum
+            else:
+                fused, _ = model.fuse_probs(coral_probs, soft_cum, feat)
 
             probs_list.append(fused.cpu().numpy())
             ys.append(labels.numpy())
