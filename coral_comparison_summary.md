@@ -194,6 +194,8 @@ Test split (`icdas4_test.csv`):
 | CORAL strict (shared-weight + bias) | 0.869 | 0.852 | 0.992 | 0.481 | 0.459 |
 | DCH-Ordinal (hybrid) | 0.862 | 0.875 | 0.996 | 0.374 | 0.512 |
 
+
+
 Generated CSV files from this run:
 
 - `roi_val_icdas4_softmax_head_icdas4.csv`
@@ -527,3 +529,48 @@ Current conclusion:
 
 - CORN is now fully reproduced and can be used as a fair baseline in the paper.
 - Under fixed-threshold evaluation on this split, CORN does not surpass softmax on both MAE and QWK simultaneously.
+
+## Overall Performance Leaderboard (Fair, Default Threshold)
+
+Protocol for this leaderboard:
+
+- same split / preprocess / backbone / training budget
+- fixed threshold decoding (`t=0.5`)
+- no proposal-stage changes
+
+### Test Main Leaderboard (`icdas4_test.csv`)
+
+Ranking rule:
+
+- primary key: higher QWK
+- tie-break: lower MAE
+
+| Rank | Method | MAE | QWK | AUC(>=1) | AUC(>=3) | AUC(>=5) |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | Ord2Seq-guided Softmax OrdPlus | 0.296 | 0.619 | 0.884 | 0.876 | 0.996 |
+| 2 | Softmax baseline | 0.296 | 0.596 | 0.862 | 0.813 | 0.996 |
+| 3 | CORN | 0.298 | 0.583 | 0.880 | 0.856 | 0.996 |
+| 4 | Existing Ordinal (Ord2Seq) | 0.286 | 0.568 | 0.857 | 0.680 | 0.998 |
+| 5 | CORAL (independent 3-logit) | 0.298 | 0.567 | 0.855 | 0.828 | 0.998 |
+| 6 | DCH dynamic (sample-wise gate) | 0.315 | 0.523 | 0.834 | 0.831 | 0.994 |
+| 7 | Your own Ordinal (masked) | 0.349 | 0.496 | 0.837 | 0.849 | 0.994 |
+| 8 | CORAL strict (shared-weight + bias) | 0.481 | 0.459 | 0.869 | 0.852 | 0.992 |
+
+Notes:
+
+- Best QWK: Ord2Seq-guided Softmax OrdPlus (`0.619`).
+- Best MAE in this table: Existing Ordinal (Ord2Seq) (`0.286`).
+- Best MAE and best QWK do not come from the same method.
+
+### Validation Main Leaderboard (`icdas4_val.csv`)
+
+| Rank | Method | MAE | QWK | AUC(>=1) | AUC(>=3) | AUC(>=5) |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | Ord2Seq-guided Softmax OrdPlus | 0.323 | 0.624 | 0.804 | 0.911 | 0.908 |
+| 2 | Softmax baseline | 0.314 | 0.614 | 0.812 | 0.906 | 0.890 |
+| 3 | DCH-Ordinal (hybrid baseline) | 0.336 | 0.596 | 0.808 | 0.912 | 0.942 |
+| 4 | CORN | 0.331 | 0.593 | 0.821 | 0.886 | 0.981 |
+| 5 | Existing Ordinal (Ord2Seq) | 0.326 | 0.584 | 0.801 | 0.731 | 0.939 |
+| 6 | CORAL strict (shared-weight + bias) | 0.410 | 0.573 | 0.822 | 0.897 | 0.945 |
+| 7 | CORAL (independent 3-logit) | 0.365 | 0.566 | 0.783 | 0.915 | 0.974 |
+| 8 | Your own Ordinal (masked) | 0.356 | 0.544 | 0.794 | 0.940 | 0.960 |
