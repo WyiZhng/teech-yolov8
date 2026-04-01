@@ -480,3 +480,50 @@ Paper comparison note:
 
 - Yes, this run is valid for direct fair comparison in the paper under the current protocol constraints (same data split, same preprocess, same backbone, same decode threshold, no proposal-stage change).
 - To make the claim more robust, report both default-threshold and tuned-threshold tables, and include multi-seed mean/std in the final paper table.
+
+## CORN Reproduction (Paper Code Style, Fair Protocol)
+
+Reference:
+
+- Repository used: `model-test/corn-ordinal-neuralnet-main`
+- Core logic reproduced from `model-code/simple-scripts/resnet34_corn.py`:
+  - output layer uses `K-1` logits for `K` classes
+  - CORN task-wise conditional loss (`loss_corn`)
+  - decode with `sigmoid -> cumulative product -> threshold(0.5)`
+
+Added scripts:
+
+- Training: `train_corn_head_icdas4.py`
+- Evaluation: `eval_corn_on_roi_icdas4.py`
+
+Fairness alignment (same as previous methods):
+
+- same split: `icdas4_train.csv`, `icdas4_val.csv`, `icdas4_test.csv`
+- same ROI preprocess: crop + resize to 256 + ImageNet normalize + `expand=1.25`
+- same backbone: ResNet18
+- same training budget: `epochs=60`, `bs=64`, `lr=3e-4`
+- same fixed decode threshold: `0.5`
+- proposal flow unchanged
+
+Artifacts:
+
+- Checkpoint: `corn_head_icdas4.pt`
+- Val CSV: `roi_val_icdas4_corn.csv`
+- Test CSV: `roi_test_icdas4_corn.csv`
+
+Metrics (default threshold, no post-hoc tuning):
+
+| Split | Method | AUC(>=1) | AUC(>=3) | AUC(>=5) | MAE | QWK |
+|---|---|---:|---:|---:|---:|---:|
+| Val | CORN | 0.821 | 0.886 | 0.981 | 0.331 | 0.593 |
+| Test | CORN | 0.880 | 0.856 | 0.996 | 0.298 | 0.583 |
+
+Comparison to softmax baseline (same default-threshold protocol):
+
+- Val: CORN has higher AUC(>=1) (`0.821 vs 0.812`) but lower QWK (`0.593 vs 0.614`) and higher MAE (`0.331 vs 0.314`).
+- Test: CORN has higher AUC(>=1/>=3) (`0.880/0.856 vs 0.862/0.813`) but slightly lower QWK (`0.583 vs 0.596`) and slightly higher MAE (`0.298 vs 0.296`).
+
+Current conclusion:
+
+- CORN is now fully reproduced and can be used as a fair baseline in the paper.
+- Under fixed-threshold evaluation on this split, CORN does not surpass softmax on both MAE and QWK simultaneously.
