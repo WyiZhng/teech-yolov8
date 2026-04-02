@@ -1,11 +1,30 @@
 # train_softmax_head_icdas4.py
 import argparse, os, math, random
+import numpy as np
 import pandas as pd
 from PIL import Image
 import torch, torch.nn as nn, torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, models
 from ord2seq_head import Ord2SeqOrdinalHead
+
+
+def seed_everything(seed: int, deterministic: bool = True):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    if deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+
+def seed_worker(worker_id: int):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 def map_ic4(icdas):
@@ -88,13 +107,32 @@ class ResNet18Icdas4(nn.Module):
         return self.ord_head(feat, labels=labels)
 
 def main(a):
+    seed_everything(a.seed, deterministic=a.deterministic)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     tr_ds = Icdas4RoiDataset(a.train_csv, a.img_root_train, a.img_size, a.expand, augment=True)
     va_ds = Icdas4RoiDataset(a.val_csv,   a.img_root_val,   a.img_size, a.expand, augment=False)
 
-    tr_loader = DataLoader(tr_ds, batch_size=a.bs, shuffle=True,  num_workers=4, pin_memory=True)
-    va_loader = DataLoader(va_ds, batch_size=a.bs, shuffle=False, num_workers=4, pin_memory=True)
+    g = torch.Generator()
+    g.manual_seed(a.seed)
+    tr_loader = DataLoader(
+        tr_ds,
+        batch_size=a.bs,
+        shuffle=True,
+        num_workers=a.workers,
+        pin_memory=True,
+        worker_init_fn=seed_worker,
+        generator=g,
+    )
+    va_loader = DataLoader(
+        va_ds,
+        batch_size=a.bs,
+        shuffle=False,
+        num_workers=a.workers,
+        pin_memory=True,
+        worker_init_fn=seed_worker,
+        generator=g,
+    )
 
     model = ResNet18Icdas4(
         pretrained=True,
@@ -158,5 +196,8 @@ if __name__ == '__main__':
     parser.add_argument('--head_type', type=str, default='softmax', choices=['softmax', 'ord2seq'])
     parser.add_argument('--ord2seq_d_model', type=int, default=256)
     parser.add_argument('--ord2seq_layers', type=int, default=2)
+    parser.add_argument('--seed', type=int, default=3407)
+    parser.add_argument('--workers', type=int, default=4)
+    parser.add_argument('--deterministic', action='store_true')
     a = parser.parse_args()
     main(a)

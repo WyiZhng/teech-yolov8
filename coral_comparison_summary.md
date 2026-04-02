@@ -566,7 +566,7 @@ Notes:
 
 | Rank | Method | MAE | QWK | AUC(>=1) | AUC(>=3) | AUC(>=5) |
 |---:|---|---:|---:|---:|---:|---:|
-| 1 | Ord2Seq-guided Softmax OrdPlus | 0.323 | 0.624 | 0.804 | 0.911 | 0.908 |
+| 1 | Ord2Seq-guided Softmax OrdPlus | 0.308 | 0.624 | 0.804 | 0.911 | 0.908 |
 | 2 | Softmax baseline | 0.314 | 0.614 | 0.812 | 0.906 | 0.890 |
 | 3 | DCH-Ordinal (hybrid baseline) | 0.336 | 0.596 | 0.808 | 0.912 | 0.942 |
 | 4 | CORN | 0.331 | 0.593 | 0.821 | 0.886 | 0.981 |

@@ -1,11 +1,30 @@
 # train_ordinal_head_min.py
 import argparse, os, math, random
+import numpy as np
 import pandas as pd
 from PIL import Image
 import torch, torch.nn as nn, torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, models
 from ord2seq_head import Ord2SeqOrdinalHead
+
+
+def seed_everything(seed: int, deterministic: bool = True):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    if deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+
+def seed_worker(worker_id: int):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 def map_ic4(icdas):
@@ -140,6 +159,7 @@ def evaluate(model, loader, device, head_type, lambda_mono):
     return sum(losses)/len(losses)
 
 def main(a):
+    seed_everything(a.seed, deterministic=a.deterministic)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = OrdinalHead(
         pretrained=True,
@@ -167,8 +187,26 @@ def main(a):
         ordinal_dims=a.ordinal_dims,
         num_classes=a.num_classes,
     )
-    tr_loader = DataLoader(tr, batch_size=a.bs, shuffle=True, num_workers=4, pin_memory=True)
-    va_loader = DataLoader(va, batch_size=a.bs, shuffle=False, num_workers=4, pin_memory=True)
+    g = torch.Generator()
+    g.manual_seed(a.seed)
+    tr_loader = DataLoader(
+        tr,
+        batch_size=a.bs,
+        shuffle=True,
+        num_workers=a.workers,
+        pin_memory=True,
+        worker_init_fn=seed_worker,
+        generator=g,
+    )
+    va_loader = DataLoader(
+        va,
+        batch_size=a.bs,
+        shuffle=False,
+        num_workers=a.workers,
+        pin_memory=True,
+        worker_init_fn=seed_worker,
+        generator=g,
+    )
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=1e-4)
     best = 1e9
 
@@ -210,6 +248,9 @@ if __name__ == '__main__':
     ap.add_argument('--ordinal_dims', '--ordinal-dims', dest='ordinal_dims', type=int, default=6)
     ap.add_argument('--ord2seq_d_model', '--ord2seq-d-model', dest='ord2seq_d_model', type=int, default=256)
     ap.add_argument('--ord2seq_layers', '--ord2seq-layers', dest='ord2seq_layers', type=int, default=2)
+    ap.add_argument('--seed', type=int, default=3407)
+    ap.add_argument('--workers', type=int, default=4)
+    ap.add_argument('--deterministic', action='store_true')
     ap.add_argument('--out', default='ordinal_head_resnet18.pt')
     a = ap.parse_args()
     main(a)
