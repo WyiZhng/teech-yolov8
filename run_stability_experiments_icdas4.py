@@ -1,5 +1,6 @@
 import argparse
 import os
+import shlex
 import subprocess
 import sys
 from datetime import datetime
@@ -185,8 +186,12 @@ def run_cmd(cmd, log_path):
         raise RuntimeError(f"Command failed ({p.returncode}): {' '.join(cmd)}")
 
 
+def save_raw_rows(raw_rows, raw_csv_path):
+    pd.DataFrame(raw_rows).to_csv(raw_csv_path, index=False)
+
+
 def build_train_cmd(args, method_key, seed, ckpt_path):
-    py = args.python_exec
+    py = list(args.python_exec_cmd)
     common = [
         "--train_csv", args.train_csv,
         "--val_csv", args.val_csv,
@@ -205,7 +210,7 @@ def build_train_cmd(args, method_key, seed, ckpt_path):
 
     if method_key == "ord2seq_guided_softmax_ordplus":
         return [
-            py,
+            *py,
             script,
             "--train_csv", args.train_csv,
             "--val_csv", args.val_csv,
@@ -223,18 +228,18 @@ def build_train_cmd(args, method_key, seed, ckpt_path):
         ]
 
     if method_key == "softmax_baseline":
-        return [py, script, *common, "--head_type", "softmax", "--seed", str(seed), "--workers", str(args.workers)] + (
+        return [*py, script, *common, "--head_type", "softmax", "--seed", str(seed), "--workers", str(args.workers)] + (
             ["--deterministic"] if args.deterministic else []
         )
 
     if method_key == "corn":
-        return [py, script, *common, "--seed", str(seed), "--workers", str(args.workers)] + (
+        return [*py, script, *common, "--seed", str(seed), "--workers", str(args.workers)] + (
             ["--deterministic"] if args.deterministic else []
         )
 
     if method_key == "existing_ordinal_ord2seq":
         return [
-            py,
+            *py,
             script,
             *common,
             "--head_type", "ord2seq",
@@ -243,17 +248,17 @@ def build_train_cmd(args, method_key, seed, ckpt_path):
         ] + (["--deterministic"] if args.deterministic else [])
 
     if method_key == "coral":
-        return [py, script, *common]
+        return [*py, script, *common]
 
     if method_key == "coral_strict":
-        return [py, script, *common]
+        return [*py, script, *common]
 
     if method_key == "dch_ordinal":
-        return [py, script, *common, "--seed", str(seed)]
+        return [*py, script, *common, "--seed", str(seed)]
 
     if method_key == "your_own_ordinal_masked":
         return [
-            py,
+            *py,
             script,
             *common,
             "--head_type", "masked",
@@ -265,13 +270,13 @@ def build_train_cmd(args, method_key, seed, ckpt_path):
 
 
 def build_eval_commands(args, method_key, ckpt_path, val_pred_csv, test_pred_csv):
-    py = args.python_exec
+    py = list(args.python_exec_cmd)
     spec = METHOD_SPECS[method_key]
     script = spec["eval_script"]
 
     if method_key in ["softmax_baseline", "existing_ordinal_ord2seq", "your_own_ordinal_masked"]:
         val_cmd = [
-            py,
+            *py,
             script,
             "--val_csv", args.val_csv,
             "--img_root", args.img_root_val,
@@ -282,7 +287,7 @@ def build_eval_commands(args, method_key, ckpt_path, val_pred_csv, test_pred_csv
             "--out_csv", val_pred_csv,
         ]
         test_cmd = [
-            py,
+            *py,
             script,
             "--val_csv", args.test_csv,
             "--img_root", args.img_root_test,
@@ -296,7 +301,7 @@ def build_eval_commands(args, method_key, ckpt_path, val_pred_csv, test_pred_csv
 
     if method_key == "ord2seq_guided_softmax_ordplus":
         val_cmd = [
-            py,
+            *py,
             script,
             "--val_csv", args.val_csv,
             "--img_root", args.img_root_val,
@@ -307,7 +312,7 @@ def build_eval_commands(args, method_key, ckpt_path, val_pred_csv, test_pred_csv
             "--out_csv", val_pred_csv,
         ]
         test_cmd = [
-            py,
+            *py,
             script,
             "--val_csv", args.test_csv,
             "--img_root", args.img_root_test,
@@ -321,7 +326,7 @@ def build_eval_commands(args, method_key, ckpt_path, val_pred_csv, test_pred_csv
 
     if method_key in ["corn", "coral", "coral_strict", "dch_ordinal"]:
         one_cmd = [
-            py,
+            *py,
             script,
             "--val_csv", args.val_csv,
             "--test_csv", args.test_csv,
@@ -340,27 +345,37 @@ def build_eval_commands(args, method_key, ckpt_path, val_pred_csv, test_pred_csv
 
 
 def summarize_runs(raw_df):
-    metric_cols = ["mae", "qwk", "auc_ge1", "auc_ge3", "auc_ge5"]
-    grouped = raw_df.groupby(["method", "split"], as_index=False)[metric_cols].agg(["mean", "std"])
-    grouped.columns = [
-        "method",
-        "split",
-        "mae_mean",
-        "mae_std",
-        "qwk_mean",
-        "qwk_std",
-        "auc_ge1_mean",
-        "auc_ge1_std",
-        "auc_ge3_mean",
-        "auc_ge3_std",
-        "auc_ge5_mean",
-        "auc_ge5_std",
-    ]
+    grouped = (
+        raw_df.groupby(["method", "split"], as_index=False)
+        .agg(
+            mae_mean=("mae", "mean"),
+            mae_std=("mae", "std"),
+            qwk_mean=("qwk", "mean"),
+            qwk_std=("qwk", "std"),
+            auc_ge1_mean=("auc_ge1", "mean"),
+            auc_ge1_std=("auc_ge1", "std"),
+            auc_ge3_mean=("auc_ge3", "mean"),
+            auc_ge3_std=("auc_ge3", "std"),
+            auc_ge5_mean=("auc_ge5", "mean"),
+            auc_ge5_std=("auc_ge5", "std"),
+        )
+    )
     return grouped
 
 
 def fmt_ms(mean_v, std_v):
     return f"{mean_v:.3f}±{std_v:.3f}"
+
+
+def dataframe_to_markdown_table(df):
+    cols = list(df.columns)
+    lines = []
+    lines.append("| " + " | ".join(cols) + " |")
+    lines.append("|" + "|".join(["---"] * len(cols)) + "|")
+    for _, row in df.iterrows():
+        vals = [str(row[c]) for c in cols]
+        lines.append("| " + " | ".join(vals) + " |")
+    return "\n".join(lines)
 
 
 def make_rank_table(df_split):
@@ -419,16 +434,16 @@ def write_paper_markdown(summary_df, out_md, seeds):
     lines.append("")
 
     lines.append("## Table 1: Test stability leaderboard")
-    lines.append(test_rank.rename(columns={"method": "Method"}).to_markdown(index=False))
+    lines.append(dataframe_to_markdown_table(test_rank.rename(columns={"method": "Method"})))
     lines.append("")
 
     lines.append("## Table 2: Validation stability leaderboard")
-    lines.append(val_rank.rename(columns={"method": "Method"}).to_markdown(index=False))
+    lines.append(dataframe_to_markdown_table(val_rank.rename(columns={"method": "Method"})))
     lines.append("")
 
     lines.append("## Table 3: Main method vs Softmax baseline")
     if compare_rows:
-        lines.append(pd.DataFrame(compare_rows).to_markdown(index=False))
+        lines.append(dataframe_to_markdown_table(pd.DataFrame(compare_rows)))
     else:
         lines.append("Insufficient rows for comparison (main or softmax missing).")
     lines.append("")
@@ -476,6 +491,7 @@ def main():
 
     ap.add_argument("--python_exec", type=str, default=sys.executable)
     ap.add_argument("--skip_if_ckpt_exists", action="store_true")
+    ap.add_argument("--resume", action="store_true")
 
     ap.add_argument("--ckpt_dir", type=str, default="ckpt/stability")
     ap.add_argument("--pred_dir", type=str, default="pred_csv/stability")
@@ -486,6 +502,7 @@ def main():
     ap.add_argument("--log_file", type=str, default="stability_run_log.txt")
 
     args = ap.parse_args()
+    args.python_exec_cmd = shlex.split(args.python_exec)
 
     methods = list(args.methods)
     if args.include_optional:
@@ -495,14 +512,24 @@ def main():
     os.makedirs(args.ckpt_dir, exist_ok=True)
     os.makedirs(args.pred_dir, exist_ok=True)
 
-    # Reset log file for this run.
-    with open(args.log_file, "w", encoding="utf-8") as f:
-        f.write(f"[{now_str()}] Start stability run\n")
+    if args.resume and os.path.exists(args.raw_csv):
+        old_raw = pd.read_csv(args.raw_csv)
+        raw_rows = old_raw.to_dict(orient="records")
+        existing_ok = {
+            (r["method"], int(r["seed"]), r["split"])
+            for r in raw_rows
+            if r.get("status") == "ok"
+        }
+        with open(args.log_file, "a", encoding="utf-8") as f:
+            f.write(f"[{now_str()}] Resume stability run\n")
+    else:
+        with open(args.log_file, "w", encoding="utf-8") as f:
+            f.write(f"[{now_str()}] Start stability run\n")
+        raw_rows = []
+        existing_ok = set()
 
     write_log(args.log_file, f"Methods: {methods}")
     write_log(args.log_file, f"Seeds: {args.seeds}")
-
-    raw_rows = []
 
     for method_key in methods:
         spec = METHOD_SPECS[method_key]
@@ -517,6 +544,10 @@ def main():
 
             train_cmd = build_train_cmd(args, method_key, seed, ckpt_path)
             eval_cmds = build_eval_commands(args, method_key, ckpt_path, val_pred_csv, test_pred_csv)
+
+            if (method_name, seed, "val") in existing_ok and (method_name, seed, "test") in existing_ok:
+                write_log(args.log_file, f"Skip completed run: method={method_name} seed={seed}")
+                continue
 
             try:
                 if args.skip_if_ckpt_exists and os.path.exists(ckpt_path):
@@ -551,6 +582,7 @@ def main():
                         "error": "",
                     }
                     raw_rows.append(row)
+                    save_raw_rows(raw_rows, args.raw_csv)
                     write_log(
                         args.log_file,
                         f"DONE method={method_name} seed={seed} split={split} "
@@ -579,8 +611,18 @@ def main():
                             "error": err,
                         }
                     )
+                    save_raw_rows(raw_rows, args.raw_csv)
 
     raw_df = pd.DataFrame(raw_rows)
+    if len(raw_df) > 0:
+        # Keep one final row per (method, seed, split), preferring successful runs.
+        raw_df["_status_rank"] = raw_df["status"].map({"ok": 1, "failed": 0}).fillna(-1)
+        raw_df = (
+            raw_df.sort_values(["method", "seed", "split", "_status_rank"])
+            .drop_duplicates(subset=["method", "seed", "split"], keep="last")
+            .drop(columns=["_status_rank"])
+            .reset_index(drop=True)
+        )
     raw_df.to_csv(args.raw_csv, index=False)
     write_log(args.log_file, f"Saved raw runs: {args.raw_csv}")
 

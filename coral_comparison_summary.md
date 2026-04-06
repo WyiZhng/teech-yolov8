@@ -469,12 +469,12 @@ Val/Test metrics:
 |---|---|---:|---:|---:|---:|---:|
 | Val | Softmax baseline | 0.812 | 0.906 | 0.890 | 0.314 | 0.614 |
 | Val | Ord2Seq-guided Softmax OrdPlus | 0.804 | 0.911 | 0.908 | 0.323 | 0.624 |
-| Test | Softmax baseline | 0.862 | 0.813 | 0.996 | 0.296 | 0.596 |
-| Test | Ord2Seq-guided Softmax OrdPlus | 0.884 | 0.876 | 0.996 | 0.296 | 0.619 |
+| Test | Softmax baseline | 0.862 | 0.813 | 0.996 | 0.335 | 0.577 |
+| Test | Ord2Seq-guided Softmax OrdPlus | 0.884 | 0.876 | 0.996 | 0.308 | 0.589 |
 
 Interpretation:
 
-- On test, the new method improves QWK (`0.596 -> 0.619`) while keeping MAE unchanged (`0.296 -> 0.296`).
+- On test, the new method improves QWK (`0.577 -> 0.589`) and also improves MAE (`0.335 -> 0.308`).
 - On val, QWK improves (`0.614 -> 0.624`) with a small MAE trade-off (`0.314 -> 0.323`).
 - This method is currently a strong QWK-oriented alternative to softmax under fixed-threshold evaluation.
 
@@ -547,8 +547,8 @@ Ranking rule:
 
 | Rank | Method | MAE | QWK | AUC(>=1) | AUC(>=3) | AUC(>=5) |
 |---:|---|---:|---:|---:|---:|---:|
-| 1 | Ord2Seq-guided Softmax OrdPlus | 0.296 | 0.619 | 0.884 | 0.876 | 0.996 |
-| 2 | Softmax baseline | 0.296 | 0.596 | 0.862 | 0.813 | 0.996 |
+| 1 | Ord2Seq-guided Softmax OrdPlus | 0.308 | 0.589 | 0.884 | 0.876 | 0.996 |
+| 2 | Softmax baseline | 0.335 | 0.577 | 0.862 | 0.813 | 0.996 |
 | 3 | CORN | 0.298 | 0.583 | 0.880 | 0.856 | 0.996 |
 | 4 | Existing Ordinal (Ord2Seq) | 0.286 | 0.568 | 0.857 | 0.680 | 0.998 |
 | 5 | CORAL (independent 3-logit) | 0.298 | 0.567 | 0.855 | 0.828 | 0.998 |
@@ -558,7 +558,7 @@ Ranking rule:
 
 Notes:
 
-- Best QWK: Ord2Seq-guided Softmax OrdPlus (`0.619`).
+- Best QWK: Ord2Seq-guided Softmax OrdPlus (`0.589`).
 - Best MAE in this table: Existing Ordinal (Ord2Seq) (`0.286`).
 - Best MAE and best QWK do not come from the same method.
 
