@@ -1,0 +1,69 @@
+{
+  "group_key_source": "image_id",
+  "total_groups": 276,
+  "target_group_counts": {
+    "train": 207,
+    "val": 34,
+    "test": 35
+  },
+  "search": {
+    "n_initial": 220,
+    "swap_attempts_per_initial": 7000,
+    "seed": 3201,
+    "mode_used": "constraint",
+    "downgraded": false,
+    "constraint": {
+      "C_min_each_of_val_test": 0,
+      "B_min_each_of_val_test": 50
+    },
+    "targets": {
+      "B_train": 260,
+      "B_val": 55,
+      "B_test": 55,
+      "C_train": 57,
+      "C_val": 13,
+      "C_test": 13,
+      "target_weight": 300.0
+    }
+  },
+  "penalty": -72000.0,
+  "hard_deficit_after": 0,
+  "split_summary": {
+    "train": {
+      "groups": 207,
+      "rois": 3476,
+      "class_0": 1505,
+      "class_1": 1654,
+      "class_2_B": 262,
+      "class_3_C": 55
+    },
+    "val": {
+      "groups": 34,
+      "rois": 585,
+      "class_0": 224,
+      "class_1": 291,
+      "class_2_B": 56,
+      "class_3_C": 14
+    },
+    "test": {
+      "groups": 35,
+      "rois": 585,
+      "class_0": 253,
+      "class_1": 262,
+      "class_2_B": 56,
+      "class_3_C": 14
+    }
+  },
+  "leakage_check": {
+    "train_val_overlap": 0,
+    "train_test_overlap": 0,
+    "val_test_overlap": 0,
+    "passed": true
+  },
+  "outputs": {
+    "train_csv": "./icdas4_rebalanced_targeted_v4_train.csv",
+    "val_csv": "./icdas4_rebalanced_targeted_v4_val.csv",
+    "test_csv": "./icdas4_rebalanced_targeted_v4_test.csv",
+    "group_mapping_csv": "./icdas4_rebalanced_targeted_v4_group_split.csv"
+  }
+}
