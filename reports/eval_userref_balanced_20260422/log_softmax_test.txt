@@ -1,0 +1,12 @@
+Starting inference on 648 ROIs...
+AUC(≥1/≥3/≥5)= 0.963/0.959/0.961
+4类  MAE=0.170  QWK=0.846
+Confusion Matrix (rows=GT 0/A/B/C, cols=Pred):
+[[242  16   0   0]
+ [ 56 237  16   0]
+ [  2  12  45   2]
+ [  0   0   4  16]]
+Calculating Top-K metrics on 39 images...
+Top-1@p_ge1: 37/37 = 1.000 (Images with GT>=1)
+Top-3@p_ge1: 37/37 = 1.000 (Images with GT>=1)
+Saved per-ROI preds to: reports/eval_userref_balanced_20260422/pred_softmax_test.csv

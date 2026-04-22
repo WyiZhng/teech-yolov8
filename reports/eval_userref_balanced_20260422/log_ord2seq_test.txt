@@ -1,0 +1,11 @@
+Detected checkpoint type: ord2seq
+AUC(≥1/≥3/≥5)= 0.954/0.851/0.995
+4类  MAE=0.168  QWK=0.833
+Confusion Matrix (rows=GT 0/A/B/C, cols=Pred):
+[[235  22   1   0]
+ [ 37 254  18   0]
+ [  4  18  39   0]
+ [  0   0   4  16]]
+Top-1@p_ge1: 34/39 = 0.872
+Top-3@p_ge1: 37/39 = 0.949
+Saved per-ROI preds to: reports/eval_userref_balanced_20260422/pred_ord2seq_test.csv

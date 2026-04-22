@@ -1,0 +1,8 @@
+AUC(>=1/>=3/>=5)= 0.947/0.959/0.940
+4-class MAE=0.199 QWK=0.826
+Confusion Matrix (rows=GT 0/A/B/C, cols=Pred):
+[[237  20   1   0]
+ [ 54 221  34   0]
+ [  0  15  46   0]
+ [  0   0   4  16]]
+Saved per-ROI preds to: reports/eval_userref_balanced_20260422/pred_ordplus_test.csv
