@@ -98,6 +98,25 @@ def split_stats_from_root(dataset_root: Path) -> Dict[str, Dict[str, int]]:
     return out
 
 
+def baseline_stats_from_legacy_table() -> Dict[str, Dict[str, int]]:
+    # User-provided baseline table (total = 4646), emphasizing balanced split-wise ratios.
+    out = {
+        "train": {"0": 1350, "A": 1546, "B": 420, "C": 158},
+        "val": {"0": 224, "A": 266, "B": 66, "C": 25},
+        "test": {"0": 232, "A": 264, "B": 74, "C": 21},
+    }
+    for sp in SPLITS:
+        out[sp]["total"] = sum(out[sp][g] for g in GROUPS)
+
+    tot = {k: 0 for k in GROUPS}
+    tot["total"] = 0
+    for sp in SPLITS:
+        for k in tot:
+            tot[k] += out[sp][k]
+    out["total"] = tot
+    return out
+
+
 def compute_class_targets(
     baseline_stats: Dict[str, Dict[str, int]],
     new_totals: Dict[str, int],
@@ -135,6 +154,20 @@ def compute_total_targets(
     raw = {sp: baseline_stats[sp]["total"] / base_total * new_total_labels for sp in SPLITS}
     flo = {sp: int(raw[sp]) for sp in SPLITS}
     rem = new_total_labels - sum(flo.values())
+    frac_order = sorted(SPLITS, key=lambda s: raw[s] - flo[s], reverse=True)
+    for i in range(rem):
+        flo[frac_order[i % len(SPLITS)]] += 1
+    return flo
+
+
+def compute_image_targets(
+    baseline_stats: Dict[str, Dict[str, int]],
+    n_images: int,
+) -> Dict[str, int]:
+    base_total = baseline_stats["total"]["total"]
+    raw = {sp: baseline_stats[sp]["total"] / base_total * n_images for sp in SPLITS}
+    flo = {sp: int(raw[sp]) for sp in SPLITS}
+    rem = n_images - sum(flo.values())
     frac_order = sorted(SPLITS, key=lambda s: raw[s] - flo[s], reverse=True)
     for i in range(rem):
         flo[frac_order[i % len(SPLITS)]] += 1
@@ -309,6 +342,57 @@ def random_perturb(
         split_to_imgs[b].remove(ib)
         split_to_imgs[a].append(ib)
         split_to_imgs[b].append(ia)
+
+    return out
+
+
+def move_to_target_image_counts(
+    assignment: Dict[str, str],
+    items: Dict[str, DatasetItem],
+    class_targets: Dict[str, Dict[str, int]],
+    total_targets: Dict[str, int],
+    class_weights: Dict[str, float],
+    total_weight: float,
+    image_targets: Dict[str, int],
+) -> Dict[str, str]:
+    out = dict(assignment)
+    split_to_imgs = {sp: [n for n, s in out.items() if s == sp] for sp in SPLITS}
+    counts = build_counts_for_assignment(out, items)
+
+    while True:
+        cur_img_counts = {sp: len(split_to_imgs[sp]) for sp in SPLITS}
+        donors = [sp for sp in SPLITS if cur_img_counts[sp] > image_targets[sp]]
+        receivers = [sp for sp in SPLITS if cur_img_counts[sp] < image_targets[sp]]
+        if not donors and not receivers:
+            break
+
+        best = None
+        best_delta = None
+        for d in donors:
+            for r in receivers:
+                old_local = split_contrib(counts[d], class_targets[d], total_targets[d], class_weights, total_weight)
+                old_local += split_contrib(counts[r], class_targets[r], total_targets[r], class_weights, total_weight)
+                for img in split_to_imgs[d]:
+                    v = items[img].counts
+                    new_d = {k: counts[d][k] - v[k] for k in counts[d]}
+                    new_r = {k: counts[r][k] + v[k] for k in counts[r]}
+                    new_local = split_contrib(new_d, class_targets[d], total_targets[d], class_weights, total_weight)
+                    new_local += split_contrib(new_r, class_targets[r], total_targets[r], class_weights, total_weight)
+                    delta = new_local - old_local
+                    if best is None or delta < best_delta:
+                        best = (d, r, img, v)
+                        best_delta = delta
+
+        if best is None:
+            break
+
+        d, r, img, v = best
+        out[img] = r
+        split_to_imgs[d].remove(img)
+        split_to_imgs[r].append(img)
+        for k in counts[d]:
+            counts[d][k] -= v[k]
+            counts[r][k] += v[k]
 
     return out
 
@@ -518,6 +602,20 @@ def main() -> None:
     parser.add_argument("--root", type=Path, default=Path("/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35"))
     parser.add_argument("--source-images", type=Path, default=None)
     parser.add_argument("--source-labels", type=Path, default=None)
+    parser.add_argument(
+        '--baseline-mode',
+        type=str,
+        default='legacy-table-4646',
+        choices=['legacy-table-4646', 'dataset-root'],
+        help='Baseline source: user historical table or labels under --baseline-split-root',
+    )
+    parser.add_argument(
+        '--image-target-mode',
+        type=str,
+        default='baseline-ratio',
+        choices=['baseline-ratio', 'current-locked'],
+        help='Use baseline split ratio or keep current split image counts fixed.',
+    )
     parser.add_argument("--baseline-split-root", type=Path, default=None)
     parser.add_argument("--current-split-root", type=Path, default=None)
     parser.add_argument("--out-split-root", type=Path, default=None)
@@ -526,6 +624,8 @@ def main() -> None:
     parser.add_argument("--restarts", type=int, default=6)
     parser.add_argument("--max-iters", type=int, default=120)
     parser.add_argument("--perturb-swaps", type=int, default=24)
+    parser.add_argument("--report-name", type=str, default="ratio_match_309_vs_baseline.csv")
+    parser.add_argument("--manifest-name", type=str, default="split_assignment_309_matched_oldratio.csv")
     args = parser.parse_args()
 
     root = args.root.resolve()
@@ -541,11 +641,18 @@ def main() -> None:
     items = load_all_items(source_images, source_labels)
     image_names = sorted(items.keys())
 
-    baseline_stats = split_stats_from_root(baseline_root)
+    if args.baseline_mode == "legacy-table-4646":
+        baseline_stats = baseline_stats_from_legacy_table()
+    else:
+        baseline_stats = split_stats_from_root(baseline_root)
     current_assignment = read_initial_assignment(current_root, image_names)
     current_stats = assignment_stats(current_assignment, items)
 
-    image_targets = split_image_targets(current_assignment)
+    if args.image_target_mode == 'baseline-ratio':
+        image_targets = compute_image_targets(baseline_stats, len(image_names))
+    else:
+        image_targets = split_image_targets(current_assignment)
+
     new_totals = current_stats["total"]
 
     class_targets = compute_class_targets(baseline_stats, new_totals)
@@ -554,18 +661,29 @@ def main() -> None:
     class_weights = {"0": 1.0, "A": 1.0, "B": 2.2, "C": 4.0}
     total_weight = 0.8
 
-    best_assignment = dict(current_assignment)
-    best_stats = current_stats
+    seeded_assignment = move_to_target_image_counts(
+        current_assignment,
+        items,
+        class_targets,
+        total_targets,
+        class_weights,
+        total_weight,
+        image_targets,
+    )
+    seeded_stats = assignment_stats(seeded_assignment, items)
+
+    best_assignment = dict(seeded_assignment)
+    best_stats = seeded_stats
     best_obj = objective(best_stats, class_targets, total_targets, class_weights, total_weight)
     best_swaps = 0
 
     for r in range(args.restarts):
         if r == 0:
-            init_assignment = dict(current_assignment)
+            init_assignment = dict(seeded_assignment)
         else:
-            init_assignment = random_perturb(current_assignment, rng, args.perturb_swaps)
+            init_assignment = random_perturb(seeded_assignment, rng, args.perturb_swaps)
 
-        # Keep image split counts unchanged from current split.
+        # Keep split image counts unchanged from selected image target mode.
         if image_split_counts(init_assignment) != image_targets:
             raise RuntimeError("Perturbation changed image split targets, which should not happen")
 
@@ -626,14 +744,14 @@ def main() -> None:
 
     report_dir = root / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
-    report_path = report_dir / "ratio_match_309_vs_baseline.csv"
+    report_path = report_dir / args.report_name
     merged.to_csv(report_path, index=False)
 
     # Save image assignment manifest for reproducibility.
     manifest = pd.DataFrame(
         [{"image_id": name, "split": sp} for name, sp in sorted(best_assignment.items())]
     )
-    manifest_path = report_dir / "split_assignment_309_matched_oldratio.csv"
+    manifest_path = report_dir / args.manifest_name
     manifest.to_csv(manifest_path, index=False)
 
     print("=== Done: rebalanced split generated ===")
@@ -642,7 +760,8 @@ def main() -> None:
     print(f"report_csv={report_path}")
     print(f"manifest_csv={manifest_path}")
     print(f"best_objective={best_obj:.6f}, best_swaps={best_swaps}")
-    print("image_count_targets(current locked):", image_targets)
+    print(f"image_target_mode={args.image_target_mode}")
+    print("image_count_targets:", image_targets)
     print("image_count_result(matched):", image_split_counts(best_assignment))
 
     print("\n=== Class targets (scaled from baseline class split shares) ===")
