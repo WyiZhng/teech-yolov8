@@ -215,8 +215,8 @@ def main(args):
 
     tr_ds = Icdas4RoiDataset(args.train_csv, args.img_root_train, args.img_size, args.expand, augment=True)
     va_ds = Icdas4RoiDataset(args.val_csv, args.img_root_val, args.img_size, args.expand, augment=False)
-    tr_loader = DataLoader(tr_ds, batch_size=args.bs, shuffle=True, num_workers=4, pin_memory=True)
-    va_loader = DataLoader(va_ds, batch_size=args.bs, shuffle=False, num_workers=4, pin_memory=True)
+    tr_loader = DataLoader(tr_ds, batch_size=args.bs, shuffle=True, num_workers=args.workers, pin_memory=True)
+    va_loader = DataLoader(va_ds, batch_size=args.bs, shuffle=False, num_workers=args.workers, pin_memory=True)
 
     model = ResNet18DCHOrdinal(
         pretrained=True,
@@ -296,6 +296,7 @@ if __name__ == "__main__":
     ap.add_argument("--lambda_mono", type=float, default=0.05)
     ap.add_argument("--lambda_fuse", type=float, default=0.0)
     ap.add_argument("--seed", type=int, default=3407)
+    ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--out", type=str, default="dch_ordinal_head_icdas4.pt")
     args = ap.parse_args()
     main(args)

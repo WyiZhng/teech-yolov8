@@ -197,7 +197,7 @@ if __name__ == '__main__':
     parser.add_argument('--ord2seq_d_model', type=int, default=256)
     parser.add_argument('--ord2seq_layers', type=int, default=2)
     parser.add_argument('--seed', type=int, default=3407)
-    parser.add_argument('--workers', type=int, default=4)
+    parser.add_argument('--workers', type=int, default=8)
     parser.add_argument('--deterministic', action='store_true')
     a = parser.parse_args()
     main(a)

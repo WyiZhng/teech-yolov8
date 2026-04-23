@@ -12,6 +12,24 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
 
 
+def seed_everything(seed, deterministic=True):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    if deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
+
 def map_ic4(icdas):
     if icdas <= 0:
         return 0
@@ -128,13 +146,33 @@ def evaluate(model, loader, device):
 
 
 def main(args):
+    seed_everything(args.seed, deterministic=args.deterministic)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     tr_ds = Icdas4RoiDataset(args.train_csv, args.img_root_train, args.img_size, args.expand, augment=True)
     va_ds = Icdas4RoiDataset(args.val_csv, args.img_root_val, args.img_size, args.expand, augment=False)
 
-    tr_loader = DataLoader(tr_ds, batch_size=args.bs, shuffle=True, num_workers=4, pin_memory=True)
-    va_loader = DataLoader(va_ds, batch_size=args.bs, shuffle=False, num_workers=4, pin_memory=True)
+    g = torch.Generator()
+    g.manual_seed(args.seed)
+
+    tr_loader = DataLoader(
+        tr_ds,
+        batch_size=args.bs,
+        shuffle=True,
+        num_workers=args.workers,
+        pin_memory=True,
+        worker_init_fn=seed_worker,
+        generator=g,
+    )
+    va_loader = DataLoader(
+        va_ds,
+        batch_size=args.bs,
+        shuffle=False,
+        num_workers=args.workers,
+        pin_memory=True,
+        worker_init_fn=seed_worker,
+        generator=g,
+    )
 
     model = ResNet18Coral(pretrained=True, num_classes=4).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -186,5 +224,8 @@ if __name__ == "__main__":
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--out", type=str, default="coral_head_icdas4.pt")
+    ap.add_argument("--seed", type=int, default=3407)
+    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--deterministic", action="store_true")
     args = ap.parse_args()
     main(args)

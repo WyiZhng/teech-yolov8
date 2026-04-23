@@ -28,34 +28,6 @@ run_job() {
     echo
 }
 
-run_job softmax_ordplus \
-    "$PY" train_softmax_ordplus_icdas4.py \
-    --train_csv derived_338_matched_userref_balanced/icdas4_train.csv \
-    --val_csv derived_338_matched_userref_balanced/icdas4_val.csv \
-    --img_root_train VOCdevkit_338_matched_userref_balanced/train/images \
-    --img_root_val VOCdevkit_338_matched_userref_balanced/val/images \
-    --ord_mode ord2seq \
-    --epochs 60 \
-    --bs 64 \
-    --lr 3e-4 \
-    --expand 1.25 \
-    --seed 3407 \
-    --workers 4 \
-    --out softmax_ordplus_o2s_icdas4_338.pt
-
-run_job corn_head \
-    "$PY" train_corn_head_icdas4.py \
-    --train_csv derived_338_matched_userref_balanced/icdas4_train.csv \
-    --val_csv derived_338_matched_userref_balanced/icdas4_val.csv \
-    --img_root_train VOCdevkit_338_matched_userref_balanced/train/images \
-    --img_root_val VOCdevkit_338_matched_userref_balanced/val/images \
-    --epochs 60 \
-    --bs 64 \
-    --lr 3e-4 \
-    --expand 1.25 \
-    --seed 3407 \
-    --workers 4 \
-    --out corn_head_icdas4_338.pt
 
 run_job coral_head \
     "$PY" train_coral_head_icdas4.py \
@@ -85,8 +57,8 @@ run_job coral_strict_head \
     --workers 4 \
     --out coral_strict_head_icdas4_338.pt
 
-run_job dch_ordinal_head \
-    "$PY" train_dch_ordinal_head_icdas4.py \
+run_job corn_head \
+    "$PY" train_corn_head_icdas4.py \
     --train_csv derived_338_matched_userref_balanced/icdas4_train.csv \
     --val_csv derived_338_matched_userref_balanced/icdas4_val.csv \
     --img_root_train VOCdevkit_338_matched_userref_balanced/train/images \
@@ -95,14 +67,40 @@ run_job dch_ordinal_head \
     --bs 64 \
     --lr 3e-4 \
     --expand 1.25 \
-    --fusion_mode fixed \
-    --alpha 0.7 \
-    --lambda_ce 0.5 \
-    --lambda_cons 0.2 \
-    --lambda_mono 0.05 \
     --seed 3407 \
     --workers 4 \
-    --out dch_ordinal_head_icdas4_338.pt
+    --out corn_head_icdas4_338.pt
+
+run_job softmax_head \
+    "$PY" train_softmax_head_icdas4.py \
+    --train_csv derived_338_matched_userref_balanced/icdas4_train.csv \
+    --val_csv derived_338_matched_userref_balanced/icdas4_val.csv \
+    --img_root_train VOCdevkit_338_matched_userref_balanced/train/images \
+    --img_root_val VOCdevkit_338_matched_userref_balanced/val/images \
+    --epochs 60 \
+    --bs 64 \
+    --lr 3e-4 \
+    --expand 1.25 \
+    --seed 3407 \
+    --workers 4 \
+    --out softmax_head_icdas4_338.pt \
+    --head_type softmax
+
+run_job ord2seq_head \
+    "$PY" train_softmax_head_icdas4.py \
+    --train_csv derived_338_matched_userref_balanced/icdas4_train.csv \
+    --val_csv derived_338_matched_userref_balanced/icdas4_val.csv \
+    --img_root_train VOCdevkit_338_matched_userref_balanced/train/images \
+    --img_root_val VOCdevkit_338_matched_userref_balanced/val/images \
+    --epochs 60 \
+    --bs 64 \
+    --lr 3e-4 \
+    --expand 1.25 \
+    --seed 3407 \
+    --workers 4 \
+    --out ord2seq_head_icdas4_338.pt \
+    --head_type ord2seq
+
 
 echo "All jobs finished. Check logs in: $LOGDIR"
 
