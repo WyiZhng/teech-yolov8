@@ -1,0 +1,23 @@
+OGAF-Net (softmax_ordplus_o2s) Error Analysis vs Softmax & Ord2Seq
+============================================================
+Total ROIs: 674
+Val/Test: test
+------------------------------------------------------------
+Correct Counts (absolute / %):
+  OGAF-Net correct:    484 ( 71.8%)
+  Softmax correct:     476 ( 70.6%)
+  Ord2Seq correct:     460 ( 68.2%)
+------------------------------------------------------------
+Cross-Model Comparison:
+  OGAF right,  Softmax wrong:  97  <- OGAF improves over Softmax
+  OGAF wrong,  Softmax right:  89  <- Softmax improves over OGAF
+  OGAF right,  Ord2Seq wrong:  88   <- OGAF improves over Ord2Seq
+  OGAF wrong,  Ord2Seq right:  64   <- Ord2Seq improves over OGAF
+------------------------------------------------------------
+Overlap Stats:
+  Both Models Right (OGAF+Softmax+Ord2Seq): 339
+  Both Wrong (OGAF+Softmax, Ord2Seq either): 101
+------------------------------------------------------------
+OGAF Error Pattern (when Softmax is correct, OGAF is wrong):
+  Adjacent errors (±1):   88
+  Cross-level (≥2):        1
