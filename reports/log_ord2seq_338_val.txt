@@ -1,0 +1,11 @@
+Detected checkpoint type: ord2seq
+Traceback (most recent call last):
+  File "tools/eval_ordinal_on_roi_icdas4.py", line 267, in <module>
+    a = ap.parse_args(); main(a)
+  File "tools/eval_ordinal_on_roi_icdas4.py", line 182, in main
+    batch.append(crop_tensor(imgp, float(r['x']),float(r['y']),float(r['w']),float(r['h']), a.expand))
+  File "tools/eval_ordinal_on_roi_icdas4.py", line 167, in crop_tensor
+    with Image.open(im_path) as im:
+  File "/data2/home/HZNU_ZWY/anaconda3/envs/yolo/lib/python3.8/site-packages/PIL/Image.py", line 3431, in open
+    fp = builtins.open(filename, "rb")
+FileNotFoundError: [Errno 2] No such file or directory: '/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/Benchmarking Dataset/valid/b44667f5-110.jpg'
