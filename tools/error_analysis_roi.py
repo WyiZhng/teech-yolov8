@@ -40,6 +40,13 @@ MODELS = {
         "prob_cols": ["p_ge1", "p_ge3", "p_ge5"],
         "gt_col": "ic4",
     },
+    "softmax_ordplus_o2s_dynamic": {
+        "val": "roi_val_icdas4_dynamic_338.csv",
+        "test": "roi_test_icdas4_dynamic_338.csv",
+        "pred_col": "pred_ic4",
+        "prob_cols": ["p_ge1", "p_ge3", "p_ge5"],
+        "gt_col": "ic4",
+    },
 }
 
 LABEL_NAMES = ["0", "A", "B", "C"]
@@ -156,12 +163,12 @@ OGAF Error Pattern (when Softmax is correct, OGAF is wrong):
     return summary
 
 def plot_error_distribution_bar(all_error_stats, out_path):
-    models = ["softmax", "ord2seq", "corn", "softmax_ordplus_o2s"]
+    models = ["softmax", "ord2seq", "corn", "softmax_ordplus_o2s", "softmax_ordplus_o2s_dynamic"]
     splits = ["val", "test"]
     x = np.arange(len(splits))
-    width = 0.22
-    fig, ax = plt.subplots(figsize=(12, 5))
-    colors = ["#3498db", "#e74c3c", "#2ecc71", "#9b59b6"]
+    width = 0.18
+    fig, ax = plt.subplots(figsize=(14, 5))
+    colors = ["#3498db", "#e74c3c", "#2ecc71", "#9b59b6", "#f39c12"]
 
     for m_idx, m in enumerate(models):
         correct_vals = []
