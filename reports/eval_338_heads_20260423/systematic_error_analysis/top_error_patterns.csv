@@ -1,0 +1,4 @@
+rank,split,pattern,ic4,bd_pred,count
+1,overall,A->0,1,0,124
+2,overall,0->A,0,1,110
+3,overall,B->A,2,1,54

@@ -1,0 +1,4 @@
+split,image_id,roi_id,ic4,bd_pred,pattern
+val,b44667f5-110.jpg,14,1,0,A->0
+test,3bd5f73c-34.jpg,9,0,1,0->A
+test,65d3605e-anonymous_004-008-1330-01_1733492594752_Mandibular_View.jpg,8,2,1,B->A
