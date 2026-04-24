@@ -88,36 +88,5 @@
   2. 调整 class_2_boost 参数（1.3 / 2.0）
   3. 引入动态融合 WITHOUT B 类加权（Ablation）
 
-## 6. Boundary 338 权重补充评估（2026-04-23）
-
-本节补充对以下两组 boundary 权重的同口径评估（同一 Val/Test split、同一脚本与 batch size）：
-
-- `softmax_ordplus_o2s_boundary_338.pt`（standard）
-- `softmax_ordplus_o2s_boundary_gpt_338.pt`（gpt）
-
-### 6.1 指标对比
-
-#### 验证集 (Val)
-
-| 模型 | MAE ↓ | QWK ↑ | AUC>=1 ↑ | AUC>=3 ↑ | AUC>=5 ↑ |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| boundary_338 (standard) | 0.3167 | 0.7408 | 0.8360 | **0.9118** | **0.9926** |
-| boundary_gpt_338 (gpt) | **0.2805** | **0.7617** | **0.8767** | 0.9049 | 0.9921 |
-
-#### 测试集 (Test)
-
-| 模型 | MAE ↓ | QWK ↑ | AUC>=1 ↑ | AUC>=3 ↑ | AUC>=5 ↑ |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| boundary_338 (standard) | 0.3516 | 0.6811 | 0.8555 | 0.8950 | **0.9587** |
-| boundary_gpt_338 (gpt) | **0.2774** | **0.7385** | **0.8999** | **0.9027** | 0.9463 |
-
-### 6.2 结论
-
-1. 从核心排序与误差指标看，`softmax_ordplus_o2s_boundary_gpt_338.pt` 明显优于 `softmax_ordplus_o2s_boundary_338.pt`：
-   - Val/Test MAE 均显著更低（0.2805/0.2774 vs 0.3167/0.3516）
-   - Val/Test QWK 均更高（0.7617/0.7385 vs 0.7408/0.6811）
-2. standard 版本仅在高阈值区分（AUC>=5）上略占优（Val/Test: 0.9926/0.9587）。
-3. 若以综合性能作为主模型选择依据，建议优先采用 `softmax_ordplus_o2s_boundary_gpt_338.pt`。
-
 ---
 *最后更新时间: 2026-04-23*
