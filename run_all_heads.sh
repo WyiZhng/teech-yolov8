@@ -29,33 +29,20 @@ run_job() {
 }
 
 
-run_job order_head \
-    "$PY" train_order_head_icdas4.py \
-    --train_csv derived_338_matched_userref_balanced/icdas4_train.csv \
-    --val_csv derived_338_matched_userref_balanced/icdas4_val.csv \
-    --img_root_train VOCdevkit_338_matched_userref_balanced/train/images \
-    --img_root_val VOCdevkit_338_matched_userref_balanced/val/images \
-    --epochs 60 \
-    --bs 64 \
-    --lr 3e-4 \
-    --expand 1.25 \
-    --seed 3407 \
-    --workers 4 \
-    --out order_head_icdas4_338.pt
+run_job softmaxORDER\
+    "$PY" train_softmax_ordplus_order_boundary_gpt.py \
+  --train_csv derived_338_matched_userref_balanced/icdas4_train.csv \
+  --val_csv derived_338_matched_userref_balanced/icdas4_val.csv \
+  --img_root_train VOCdevkit_338_matched_userref_balanced/train/images \
+  --img_root_val VOCdevkit_338_matched_userref_balanced/val/images \
+  --epochs 60 \
+  --bs 64 \
+  --lr 3e-4 \
+  --expand 1.25 \
+  --workers 4 \
+  --seed 3407 \
+  --out softmax_ordplus_order_boundary_338.pt
 
-run_job cloc_head \
-    "$PY" train_cloc_head_icdas4.py \
-    --train_csv derived_338_matched_userref_balanced/icdas4_train.csv \
-    --val_csv derived_338_matched_userref_balanced/icdas4_val.csv \
-    --img_root_train VOCdevkit_338_matched_userref_balanced/train/images \
-    --img_root_val VOCdevkit_338_matched_userref_balanced/val/images \
-    --epochs 60 \
-    --bs 64 \
-    --lr 3e-4 \
-    --expand 1.25 \
-    --seed 3407 \
-    --workers 4 \
-    --out cloc_head_icdas4_338.pt
 
 
 echo "All jobs finished. Check logs in: $LOGDIR"

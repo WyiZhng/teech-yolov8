@@ -1,0 +1,53 @@
+{
+  "dataset": {
+    "val_csv": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/derived_338_matched_userref_balanced/icdas4_val.csv",
+    "test_csv": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/derived_338_matched_userref_balanced/icdas4_test.csv",
+    "img_root_val": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/VOCdevkit_338_matched_userref_balanced/val/images",
+    "img_root_test": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/VOCdevkit_338_matched_userref_balanced/test/images",
+    "val_n": 663,
+    "test_n": 674,
+    "device": "cuda"
+  },
+  "models": [
+    {
+      "name": "softmax_ordplus_order_boundary",
+      "ckpt": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/softmax_ordplus_order_boundary_338.pt",
+      "out_val_csv": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/reports/eval_338_heads_20260423/roi_val_softmax_ordplus_order_boundary_338.csv",
+      "out_test_csv": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/reports/eval_338_heads_20260423/roi_test_softmax_ordplus_order_boundary_338.csv",
+      "val": {
+        "mae": 0.2850678733031674,
+        "qwk": 0.7569376922709087,
+        "auc_ge1": 0.8816619133538987,
+        "auc_ge3": 0.8848994452149791,
+        "auc_ge5": 0.9762282091917591
+      },
+      "test": {
+        "mae": 0.25370919881305637,
+        "qwk": 0.7675232505643341,
+        "auc_ge1": 0.9046241428145498,
+        "auc_ge3": 0.8987842147222961,
+        "auc_ge5": 0.9403514797641536
+      }
+    },
+    {
+      "name": "softmax_ordplus_cloc_boundary",
+      "ckpt": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/softmax_ordplus_cloc_boundary_338.pt",
+      "out_val_csv": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/reports/eval_338_heads_20260423/roi_val_softmax_ordplus_cloc_boundary_338.csv",
+      "out_test_csv": "/data/HZNU_ZWY/zwy_project/ultralytics-8.1.35/reports/eval_338_heads_20260423/roi_test_softmax_ordplus_cloc_boundary_338.csv",
+      "val": {
+        "mae": 0.27149321266968324,
+        "qwk": 0.7665368404204237,
+        "auc_ge1": 0.8834807830355238,
+        "auc_ge3": 0.9088592233009708,
+        "auc_ge5": 0.9668680665610142
+      },
+      "test": {
+        "mae": 0.2789317507418398,
+        "qwk": 0.7487211290629022,
+        "auc_ge1": 0.8985958929636255,
+        "auc_ge3": 0.9191469572149882,
+        "auc_ge5": 0.9176827523040816
+      }
+    }
+  ]
+}
