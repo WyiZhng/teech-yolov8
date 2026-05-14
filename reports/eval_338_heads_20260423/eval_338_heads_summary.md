@@ -35,6 +35,14 @@
 | **softmax_ordplus_order_boundary** | **0.905** / **0.919** / **0.978** | **0.254** | **0.768** |
 | **softmax_ordplus_cloc_boundary** | 0.899 / **0.919** / 0.918 | 0.279 | 0.749 |
 
+## 3) 方法说明（论文表述建议）
+
+- 本文 ROI 序位头的训练与评估均基于强标注 ROI，而不是 detector proposal。
+- 训练脚本读取的是 `derived_338_matched_userref_balanced/icdas4_train.csv` 和 `derived_338_matched_userref_balanced/icdas4_val.csv`，其 ROI 坐标来自强标注 `icdas_strong_labels.csv`（即 GT 标注框），数据加载时直接按 `x/y/w/h` 或 `gx/gy/gw/gh` 裁剪 ROI。
+- 本次 338 实验使用的随机种子为 `3407`；对应训练启动脚本 `run_all_heads.sh` 中显式指定了 `--seed 3407`，各训练脚本默认值也为 `3407`。
+- 当前这份 ROI-head 评估结果是在标注 ROI 上直接推理得到的，没有使用 detector 预测框，因此不涉及 IoU 阈值或匹配规则。
+- 如果后续写 detector-proposal 版本的实验，则应明确采用 proposal 与 GT 的匹配策略；仓库中的对齐脚本 `align_icdas.py` 使用的是贪心一对一匹配，按 proposal 分数排序，IoU 阈值默认 `0.5`，仅保留与 GT 成功匹配的 proposal。
+
 
 
 
